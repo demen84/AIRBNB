@@ -1,0 +1,106 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/modules-system/prisma/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model binhluan {
+  id                 Int       @id @default(autoincrement())
+  ma_phong           Int
+  ma_nguoi_binh_luan Int
+  ngay_binh_luan     DateTime  @db.Date
+  noi_dung           String    @db.VarChar(255)
+  sao_binh_luan      Int
+  created_at         DateTime? @default(now()) @db.DateTime(0)
+  updated_at         DateTime? @default(now()) @db.DateTime(0)
+  phong              phong     @relation(fields: [ma_phong], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "binhluan_ibfk_1")
+  nguoidung          nguoidung @relation(fields: [ma_nguoi_binh_luan], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "binhluan_ibfk_2")
+
+  @@index([ma_nguoi_binh_luan], map: "ma_nguoi_binh_luan")
+  @@index([ma_phong], map: "ma_phong")
+}
+
+model datphong {
+  id             Int                  @id @default(autoincrement())
+  ma_phong       Int
+  ngay_den       DateTime             @db.Date
+  ngay_di        DateTime             @db.Date
+  so_luong_khach Int
+  ma_nguoi_dat   Int
+  trang_thai     datphong_trang_thai? @default(pending)
+  created_at     DateTime?            @default(now()) @db.DateTime(0)
+  updated_at     DateTime?            @default(now()) @db.DateTime(0)
+  phong          phong                @relation(fields: [ma_phong], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "datphong_ibfk_1")
+  nguoidung      nguoidung            @relation(fields: [ma_nguoi_dat], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "datphong_ibfk_2")
+
+  @@index([ma_nguoi_dat], map: "ma_nguoi_dat")
+  @@index([ma_phong], map: "ma_phong")
+}
+
+model nguoidung {
+  id         Int        @id @default(autoincrement())
+  name       String     @db.VarChar(255)
+  email      String     @unique(map: "email") @db.VarChar(255)
+  pass_word  String     @db.VarChar(255)
+  phone      String?    @db.VarChar(20)
+  birth_day  String?    @db.VarChar(20)
+  gender     String?    @db.VarChar(10)
+  role       String?    @default("user") @db.VarChar(20)
+  avatar     String?    @db.VarChar(255)
+  created_at DateTime?  @default(now()) @db.DateTime(0)
+  updated_at DateTime?  @default(now()) @db.DateTime(0)
+  binhluan   binhluan[]
+  datphong   datphong[]
+}
+
+model phong {
+  id         Int        @id @default(autoincrement())
+  ten_phong  String     @db.VarChar(255)
+  khach      Int
+  phong_ngu  Int
+  giuong     Int
+  phong_tam  Int
+  mo_ta      String?    @db.Text
+  gia_tien   Int
+  may_giat   Boolean?   @default(false)
+  ban_la     Boolean?   @default(false)
+  tivi       Boolean?   @default(false)
+  dieu_hoa   Boolean?   @default(false)
+  wifi       Boolean?   @default(false)
+  bep        Boolean?   @default(false)
+  do_xe      Boolean?   @default(false)
+  ho_boi     Boolean?   @default(false)
+  ban_ui     Boolean?   @default(false)
+  ma_vi_tri  Int
+  hinh_anh   String?    @db.VarChar(255)
+  danh_gia   Int?       @default(0)
+  created_at DateTime?  @default(now()) @db.DateTime(0)
+  updated_at DateTime?  @default(now()) @db.DateTime(0)
+  binhluan   binhluan[]
+  datphong   datphong[]
+  vitri      vitri      @relation(fields: [ma_vi_tri], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "phong_ibfk_1")
+
+  @@index([ma_vi_tri], map: "ma_vi_tri")
+}
+
+model vitri {
+  id         Int       @id @default(autoincrement())
+  ten_vi_tri String    @db.VarChar(255)
+  tinh_thanh String    @db.VarChar(255)
+  quoc_gia   String    @db.VarChar(255)
+  hinh_anh   String?   @db.VarChar(255)
+  created_at DateTime? @default(now()) @db.DateTime(0)
+  updated_at DateTime? @default(now()) @db.DateTime(0)
+  phong      phong[]
+}
+
+enum datphong_trang_thai {
+  pending
+  confirmed
+  cancelled
+}
