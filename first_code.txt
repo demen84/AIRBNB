@@ -1,0 +1,152 @@
+5. Cấu hình app.module.ts
+Thay toàn bộ nội dung src/app.module.ts bằng:
+TypeScriptimport { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { VitriModule } from './vitri/vitri.module';
+import { PhongModule } from './phong/phong.module';
+import { DatphongModule } from './datphong/datphong.module';
+import { BinhluanModule } from './binhluan/binhluan.module';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'mysql',
+        host: configService.get('DB_HOST'),
+        port: +configService.get('DB_PORT'),
+        username: configService.get('DB_USERNAME'),
+        password: configService.get('DB_PASSWORD'),
+        database: configService.get('DB_NAME'),
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        synchronize: true, // TẮT khi nộp bài, chỉ để true lúc dev
+        logging: true,
+      }),
+      inject: [ConfigService],
+    }),
+    AuthModule,
+    UsersModule,
+    VitriModule,
+    PhongModule,
+    DatphongModule,
+    BinhluanModule,
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
+6. Tạo các module cần thiết (tự động tạo luôn controller + service)
+Bashnest g module auth
+nest g module users
+nest g module vitri
+nest g module phong
+nest g module datphong
+nest g module binhluan
+
+nest g controller auth --no-spec
+nest g controller users --no-spec
+nest g controller vitri --no-spec
+nest g controller phong --no-spec
+nest g controller datphong --no-spec
+nest g controller binhluan --no-spec
+
+nest g service auth --no-spec
+nest g service users --no-spec
+nest g service vitri --no-spec
+nest g service phong --no-spec
+nest g service datphong --no-spec
+nest g service binhluan --no-spec
+7. Cấu hình Swagger (mở src/main.ts)
+Thay nội dung main.ts thành:
+TypeScriptimport { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  // CORS
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  });
+
+  // Swagger
+  const config = new DocumentBuilder()
+    .setTitle('Airbnb NestJS API')
+    .setDescription('API cho bài tập Capstone Cybersoft')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
+
+  await app.listen(process.env.PORT || 8080);
+}
+bootstrap();
+8. Tạo thư mục upload ảnh
+Bashmkdir uploads
+mkdir uploads/avatar
+mkdir uploads/phong
+mkdir uploads/vitri
+9. Chạy thử project
+Bashnpm run start:dev
+Mở trình duyệt → http://localhost:8080/api → Bạn sẽ thấy Swagger đẹp như Cybersoft luôn!
+10. Bonus: Tạo sẵn 1 entity để test (ví dụ: User.entity.ts)
+Tạo file src/users/entities/user.entity.ts
+TypeScriptimport { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+
+@Entity('NguoiDung')
+export class User {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ type: 'varchar', length: 255 })
+  name: string;
+
+  @Column({ type: 'varchar', length: 255, unique: true })
+  email: string;
+
+  @Column({ type: 'varchar', length: 255 })
+  pass_word: string;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  phone: string;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  birth_day: string;
+
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  gender: string;
+
+  @Column({ type: 'varchar', length: 20, default: 'user' })
+  role: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  avatar: string;
+
+  @CreateDateColumn()
+  created_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
+}
+Sau khi tạo entity này → restart server → TypeORM sẽ tự tạo bảng NguoiDung trong DB luôn (vì synchronize: true).
+Xong! Bạn đã có một project NestJS Airbnb hoàn chỉnh từ A-Z
+Bây giờ bạn chỉ cần:
+
+Tạo tiếp các entity còn lại (ViTri, Phong, DatPhong, BinhLuan) → giống như User trên
+Viết DTO, service, controller từng module
+
+Nếu bạn muốn mình gửi luôn toàn bộ source code hoàn chỉnh (có entity, DTO, auth JWT, upload ảnh, phân trang, v.v.) thì cứ nói nhé! Mình gửi liền trong 1 message hoặc qua GitHub template luôn.
+Bạn muốn tiếp tục phần nào đây?
+
+Tạo hết entity?
+Làm Auth (đăng ký, đăng nhập, upload avatar)?
+Hay làm luôn module Phòng có upload hình?
