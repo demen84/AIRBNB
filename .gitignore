@@ -1,9 +1,18 @@
-# compiled output
+# 1. Compiled / Build outputs
 /dist
 /node_modules
 /build
 
-# Logs
+# 2. Prisma (Để tránh lỗi định dạng xuống dòng và làm nhẹ repo)
+**/prisma/generated/
+*.prisma-client
+
+# 3. Environment variables (Bảo mật thông tin quan trọng)
+.env
+.env.*
+!.env.example
+
+# 4. Logs
 logs
 *.log
 npm-debug.log*
@@ -12,15 +21,14 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-# OS
+# 5. OS (Dành cho cả Mac và Windows)
 .DS_Store
+Thumbs.db
+desktop.ini
 
-# Tests
-/coverage
-/.nyc_output
-
-# IDEs and editors
-/.idea
+# 6. IDEs and editors (Xóa bỏ cấu hình cá nhân của VSCode/JetBrains)
+.vscode/
+.idea/
 .project
 .classpath
 .c9/
@@ -28,31 +36,15 @@ lerna-debug.log*
 .settings/
 *.sublime-workspace
 
-# IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+# 7. Tests & Coverage
+/coverage
+/.nyc_output
 
-# dotenv environment variable files
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
-
-# temp directory
+# 8. Temporary/Runtime data
 .temp
 .tmp
-
-# Runtime data
 pids
 *.pid
 *.seed
 *.pid.lock
-
-# Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
-
-/generated/prisma
