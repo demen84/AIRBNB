@@ -1,13 +1,16 @@
 generator client {
-  provider     = "prisma-client"
-  output       = "../src/modules-system/prisma/generated/prisma"
+  provider            = "prisma-client"
+  output              = "../src/modules-system/prisma/generated/prisma"
   moduleFormat = "cjs"
+  generatedFileExtension = "ts"   // Giữ file generate là .ts
+  importFileExtension    = "ts"   // Buộc import dùng đuôi .ts thay vì .js
 }
 
 datasource db {
   provider = "mysql"
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model binhluan {
   id                 Int       @id @default(autoincrement())
   ma_phong           Int
@@ -17,31 +20,31 @@ model binhluan {
   sao_binh_luan      Int
   created_at         DateTime? @default(now()) @db.DateTime(0)
   updated_at         DateTime? @default(now()) @db.DateTime(0)
-  Phong              Phong     @relation(fields: [ma_phong], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "BinhLuan_ibfk_1")
-  NguoiDung          NguoiDung @relation(fields: [ma_nguoi_binh_luan], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "BinhLuan_ibfk_2")
+  phong              phong     @relation(fields: [ma_phong], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "binhluan_ibfk_1")
+  nguoidung          nguoidung @relation(fields: [ma_nguoi_binh_luan], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "binhluan_ibfk_2")
 
   @@index([ma_nguoi_binh_luan], map: "ma_nguoi_binh_luan")
   @@index([ma_phong], map: "ma_phong")
 }
 
-model DatPhong {
+model datphong {
   id             Int                  @id @default(autoincrement())
   ma_phong       Int
   ngay_den       DateTime             @db.Date
   ngay_di        DateTime             @db.Date
   so_luong_khach Int
   ma_nguoi_dat   Int
-  trang_thai     DatPhong_trang_thai? @default(pending)
+  trang_thai     datphong_trang_thai? @default(pending)
   created_at     DateTime?            @default(now()) @db.DateTime(0)
   updated_at     DateTime?            @default(now()) @db.DateTime(0)
-  Phong          Phong                @relation(fields: [ma_phong], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "DatPhong_ibfk_1")
-  NguoiDung      NguoiDung            @relation(fields: [ma_nguoi_dat], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "DatPhong_ibfk_2")
+  phong          phong                @relation(fields: [ma_phong], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "datphong_ibfk_1")
+  nguoidung      nguoidung            @relation(fields: [ma_nguoi_dat], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "datphong_ibfk_2")
 
   @@index([ma_nguoi_dat], map: "ma_nguoi_dat")
   @@index([ma_phong], map: "ma_phong")
 }
 
-model NguoiDung {
+model nguoidung {
   id         Int        @id @default(autoincrement())
   name       String     @db.VarChar(255)
   email      String     @unique(map: "email") @db.VarChar(255)
@@ -53,11 +56,11 @@ model NguoiDung {
   avatar     String?    @db.VarChar(255)
   created_at DateTime?  @default(now()) @db.DateTime(0)
   updated_at DateTime?  @default(now()) @db.DateTime(0)
-  BinhLuan   BinhLuan[]
-  DatPhong   DatPhong[]
+  binhluan   binhluan[]
+  datphong   datphong[]
 }
 
-model Phong {
+model phong {
   id         Int        @id @default(autoincrement())
   ten_phong  String     @db.VarChar(255)
   khach      Int
@@ -80,14 +83,14 @@ model Phong {
   danh_gia   Int?       @default(0)
   created_at DateTime?  @default(now()) @db.DateTime(0)
   updated_at DateTime?  @default(now()) @db.DateTime(0)
-  BinhLuan   BinhLuan[]
-  DatPhong   DatPhong[]
-  ViTri      ViTri      @relation(fields: [ma_vi_tri], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "Phong_ibfk_1")
+  binhluan   binhluan[]
+  datphong   datphong[]
+  vitri      vitri      @relation(fields: [ma_vi_tri], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "phong_ibfk_1")
 
   @@index([ma_vi_tri], map: "ma_vi_tri")
 }
 
-model ViTri {
+model vitri {
   id         Int       @id @default(autoincrement())
   ten_vi_tri String    @db.VarChar(255)
   tinh_thanh String    @db.VarChar(255)
@@ -95,10 +98,10 @@ model ViTri {
   hinh_anh   String?   @db.VarChar(255)
   created_at DateTime? @default(now()) @db.DateTime(0)
   updated_at DateTime? @default(now()) @db.DateTime(0)
-  Phong      Phong[]
+  phong      phong[]
 }
 
-enum DatPhong_trang_thai {
+enum datphong_trang_thai {
   pending
   confirmed
   cancelled
