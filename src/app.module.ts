@@ -7,12 +7,14 @@ import { PhongModule } from './modules-api/phong/phong.module';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './modules-api/auth/auth.module';
 import { PrismaModule } from './modules-system/prisma/prisma.module';
+import { TokenModule } from './modules-system/token/token.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     AuthModule,
     PrismaModule,
+    TokenModule,
     VitriModule,
     NguoidungModule,
     PhongModule,

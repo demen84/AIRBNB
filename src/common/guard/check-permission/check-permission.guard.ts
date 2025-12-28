@@ -1,0 +1,58 @@
+import {
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { AuthGuard } from '@nestjs/passport';
+import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
+import { IS_CHECK_PERMISION_KEY } from 'src/common/decorators/check-permission.decorator';
+import { IS_PUBLIC_KEY } from 'src/common/decorators/public.decorator';
+
+// @Injectable()
+export class CheckPermisionGuard extends AuthGuard('check-permission') {
+  //   private reflector: Reflector;
+  constructor(private reflector: Reflector) {
+    super(); // this.reflector = reflector;
+  }
+  // 1
+  canActivate(context: ExecutionContext) {
+    // hàm canActivate sẽ luôn luôn được chạy đầu tiên, để kiểm tra đầu vào xem api đó có muốn kiểm tra token hay không
+    // nếu api đó được đánh dấu @Public thì chúng ta sẽ bỏ qua không kiểm tra token với api đó
+    console.log('canActivate');
+    // Add your custom authentication logic here
+    // for example, call super.logIn(request) to establish a session.
+    const isPublic = this.reflector.getAllAndOverride(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    console.log({ isPublic });
+
+    if (isPublic === true) {
+      return true;
+    }
+
+    // CHECK PERMISION
+    const skipPermission = this.reflector.getAllAndOverride(
+      IS_CHECK_PERMISION_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+    console.log({ skipPermission });
+    if (skipPermission) {
+      return true;
+    }
+    // return true;
+    return super.canActivate(context);
+  }
+
+  // 4. thành công hay thất bại thì sẽ luôn luôn chạy cuối cùng
+  handleRequest(err: any, user: any, info: any) {
+    console.log('handleRequest', { err, user, info });
+
+    if (err || !user) {
+      throw err || new UnauthorizedException();
+    }
+    return user;
+  }
+}
