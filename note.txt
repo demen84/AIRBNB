@@ -1,0 +1,15 @@
+Khi git pull về,
+sau đó chạy tiếp lệnh:
+npm i
+và:
+npx prisma generate
+
+Nếu không muốn chạy npx prisma generate thì:
+đưa 2 dòng sau:
+
+"postinstall": "prisma generate",
+"prepare": "prisma generate",
+
+vào script trong file package.json
+sau này chỉ cần: git pull ==> npm i; không cần npx prisma generate
+
