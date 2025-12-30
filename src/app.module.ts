@@ -8,6 +8,9 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './modules-api/auth/auth.module';
 import { PrismaModule } from './modules-system/prisma/prisma.module';
 import { TokenModule } from './modules-system/token/token.module';
+import { ProtectStrategy } from './common/guard/protect/protect.strategy';
+import { CheckPermisionStrategy } from './common/guard/check-permission/check-permission.strategy';
+
 
 @Module({
   imports: [
@@ -20,6 +23,8 @@ import { TokenModule } from './modules-system/token/token.module';
     PhongModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+
+  // CheckPermisionStrategy là 1 @Injectable() & nó sd global nên ta bỏ nó vào provider của file app.module.ts là hợp lý.
+  providers: [AppService, ProtectStrategy, CheckPermisionStrategy],
 })
-export class AppModule {}
+export class AppModule { }

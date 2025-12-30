@@ -46,7 +46,7 @@ export class ProtectGuard extends AuthGuard('protect') {
     if (err || !user) {
       if (info instanceof TokenExpiredError) {
         // 403 để làm mới token : hết hạn token
-        throw new ForbiddenException(info.message); // info là lỗi, lỗi thì lun lun có message
+        throw new ForbiddenException(info.message); // info là lỗi, lỗi thì luon luon có message
       }
       if (info instanceof JsonWebTokenError) {
         // 401 để cho FE logout người dùng, vì token đang không hợp lệ

@@ -15,7 +15,7 @@ export class CheckPermisionStrategy extends PassportStrategy(
 ) {
   // 2: custom
   constructor(private readonly prisma: PrismaService) {
-    super();
+    super(); // Không làm gì cả
   }
 
   // 3: Chỉ chạy khi kiểm tra token thành công
@@ -27,21 +27,21 @@ export class CheckPermisionStrategy extends PassportStrategy(
       );
     }
 
-    if (user.roleId === 1) {
+    if (user.role === 'user') {
       return req.user;
     }
 
     const method = req.method;
     const endpoint = req.baseUrl + req.route?.path;
 
-    const rolePermission = await this.prisma.rolePermission.findFirst({
+    const rolePermission = await this.prisma.nguoidung.findFirst({
       where: {
-        roleId: user.roleId,
-        Permissions: {
-          method: method,
-          endpoint: endpoint,
-        },
-        isActive: true,
+        role: user.role,
+        // Permissions: {
+        //   method: method,
+        //   endpoint: endpoint,
+        // },
+        // isActive: true, => do bảng nguoidung ko có field isActive nên rào lại
       },
     });
 
@@ -53,6 +53,10 @@ export class CheckPermisionStrategy extends PassportStrategy(
       });
       throw new BadRequestException('Người dùng không đủ quyền');
     }
+    /**
+     * phải return về req.user => để user trong hàm handleRequest nhận được req.user
+     * nếu return true thì bên hàm handleRequest sẽ chỉ nhận đc giá trị là true, khi đó tham số user chỉ nhận là true, và trả về true, ko có thông tin user.
+     */
     return req.user;
   }
 }

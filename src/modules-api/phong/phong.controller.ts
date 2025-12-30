@@ -1,21 +1,24 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req, UseGuards } from '@nestjs/common';
 import { PhongService } from './phong.service';
 import { CreatePhongDto } from './dto/create-phong.dto';
 import { UpdatePhongDto } from './dto/update-phong.dto';
 import { QueryDto } from './dto/query.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { SkipPermission } from 'src/common/decorators/check-permission.decorator';
 
 @Controller('phong')
 export class PhongController {
-  constructor(private readonly phongService: PhongService) {}
+  constructor(private readonly phongService: PhongService) { }
 
   @Post()
   create(@Body() createPhongDto: CreatePhongDto) {
     return this.phongService.create(createPhongDto);
   }
 
+  @SkipPermission()
   @Get()
   findAll(@Query() queryDto: QueryDto, @Req() req: any) {
-    console.log(req.user);
+    // console.log(req.user);
     return this.phongService.findAll(queryDto);
   }
 

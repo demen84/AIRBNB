@@ -11,7 +11,7 @@ import { KEY_MESSAGE_RESPONSE } from '../decorators/response-message.decorator';
 
 @Injectable()
 export class ResponseSuccessInterceptor implements NestInterceptor {
-  // constructor(public reflector: Reflector) {}
+  constructor(public reflector: Reflector) { }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const res = context.switchToHttp().getResponse();
@@ -23,6 +23,7 @@ export class ResponseSuccessInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       map((data) => {
+        // console.log({ data });
         return {
           status: 'Success',
           statusCode: res.statusCode,

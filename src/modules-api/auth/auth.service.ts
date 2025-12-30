@@ -4,13 +4,15 @@ import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { TokenService } from 'src/modules-system/token/token.service';
+import { QueryDto } from '../phong/dto/query.dto';
+import { buildQuery } from 'src/common/helper/build-query.helper';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokenService: TokenService,
-  ) {}
+  ) { }
 
   async register(registerDto: RegisterDto) {
     const { name, email, pass_word } = registerDto;
@@ -90,7 +92,51 @@ export class AuthService {
     return tokens;
   }
 
-  getInfo() {
-    return 'At service: Get info successfully.';
+  getInfo(req: any) {
+    // delete req.user.pass_word;
+    return req.user;
+  }
+
+  async findAll(queryDto: QueryDto) {
+    const { page, pageSize, filters, skip } = buildQuery(queryDto);
+
+    const usersPromise = this.prisma.nguoidung.findMany({
+      where: filters,
+      skip: skip, // skip qua index bao nhiêu phần tử
+      take: pageSize, // số phần tử cần lấy
+
+      // Chỉ show các field cần thiết
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        gender: true,
+        phone: true,
+        avatar: true,
+        role: true,
+        created_at: true
+      },
+      orderBy: [{ created_at: 'asc' }, { id: 'desc' }]
+    });
+
+    const totalItemPromise = this.prisma.nguoidung.count({ where: filters });
+
+    // Truy vấn xuống db nên phải dùng await
+    const [users, totalItem] = await Promise.all([
+      usersPromise,
+      totalItemPromise,
+    ]); // vì user & totalItem chạy độc lập, nên ta cho nó chạy song song, bằng cách bỏ vào Promise.all() này. Ở trên ta bỏ await
+
+    const totalPage = Math.ceil(totalItem / pageSize);
+
+
+    return {
+      thongBao: "Lấy danh sách Người dùng thành công",
+      page: page,
+      pageSize: pageSize,
+      totalItem: totalItem, // SL bài viết
+      totalPage: totalPage, // SL trang
+      items: users || [],
+    };
   }
 }

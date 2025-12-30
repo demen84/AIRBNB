@@ -1,10 +1,19 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { PORT } from './common/constant/app.constant';
 import { ValidationPipe } from '@nestjs/common';
+import { ProtectGuard } from './common/guard/protect/protect.guard';
+import { CheckPermissionGuard } from './common/guard/check-permission/check-permission.guard';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptors';
+import { ResponseSuccessInterceptor } from './common/interceptors/response-success.interceptors';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  const reflector = app.get(Reflector);
+
+  app.useGlobalGuards(new ProtectGuard(reflector));
+  app.useGlobalGuards(new CheckPermissionGuard(reflector));
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -17,6 +26,10 @@ async function bootstrap() {
       transformOptions: { enableImplicitConversion: true },
     }),
   );
+
+  // Gắn interceptor ở Global:
+  app.useGlobalInterceptors(new LoggingInterceptor());
+  app.useGlobalInterceptors(new ResponseSuccessInterceptor(reflector));
 
   // Thêm api trong endpoint:
   app.setGlobalPrefix('api');
