@@ -3,10 +3,10 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 export const initSwagger = (app: INestApplication<any>) => {
   const config = new DocumentBuilder()
-    .setTitle('Cats example')
+    .setTitle('AIR BNB')
     .setDescription('The cats API description')
     .setVersion('1.0')
-    .addTag('API')
+    .addTag('Air_Bnb Api Document')
     .addBearerAuth() //biểu tượng ổ khóa Authorize
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);

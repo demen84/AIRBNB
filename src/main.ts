@@ -6,6 +6,7 @@ import { ProtectGuard } from './common/guard/protect/protect.guard';
 import { CheckPermissionGuard } from './common/guard/check-permission/check-permission.guard';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptors';
 import { ResponseSuccessInterceptor } from './common/interceptors/response-success.interceptors';
+import { initSwagger } from './common/swagger/init.swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -33,6 +34,9 @@ async function bootstrap() {
 
   // Thêm api trong endpoint:
   app.setGlobalPrefix('api');
+
+  // Gắn Swagger: http://localhost:3839/docs
+  initSwagger(app);
 
   //Dòng này tương đương app.listen() bên express
   await app.listen(PORT ?? 3000, () => {

@@ -40,7 +40,7 @@ export class AuthService {
       },
     });
 
-    console.log({ email, pass_word, name, userExist });
+    // console.log({ email, pass_word, name, userExist });
 
     // return {
     //     title: "Register",

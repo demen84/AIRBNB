@@ -9,13 +9,13 @@ import {
 } from 'class-validator';
 
 export class LoginDto {
-  @ApiProperty({ example: 'hoang@gmail.com' })
+  @ApiProperty({ example: 'hoang@gmail.com' }) // Tạo giá trị mặc định bên swagger
   @IsEmail()
   @IsNotEmpty()
   @IsString()
   email: string;
 
-  @ApiProperty({ example: 'Hoang@123' })
+  @ApiProperty({ example: 'Hoang@123' }) // Tạo giá trị mặc định bên swagger
   @IsNotEmpty()
   @IsString()
   // @IsUppercase()
