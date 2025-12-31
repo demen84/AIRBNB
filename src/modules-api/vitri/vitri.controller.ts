@@ -2,10 +2,12 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { VitriService } from './vitri.service';
 import { CreateVitriDto } from './dto/create-vitri.dto';
 import { UpdateVitriDto } from './dto/update-vitri.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Vị Trí')
 @Controller('vitri')
 export class VitriController {
-  constructor(private readonly vitriService: VitriService) {}
+  constructor(private readonly vitriService: VitriService) { }
 
   @Post()
   create(@Body() createVitriDto: CreateVitriDto) {

@@ -4,9 +4,9 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 export const initSwagger = (app: INestApplication<any>) => {
   const config = new DocumentBuilder()
     .setTitle('AIR BNB')
-    .setDescription('The cats API description')
+    .setDescription('Mô tả api dự án air_bnb')
     .setVersion('1.0')
-    .addTag('Air_Bnb Api Document')
+    .addTag('Tài liệu API dự án Air_Bnb')
     .addBearerAuth() //biểu tượng ổ khóa Authorize
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);

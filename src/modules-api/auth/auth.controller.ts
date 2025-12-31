@@ -5,11 +5,12 @@ import { LoginDto } from './dto/login.dto';
 import { QueryDto } from '../phong/dto/query.dto';
 import { PublicDecorator } from 'src/common/decorators/public.decorator';
 import { SkipPermission } from 'src/common/decorators/check-permission.decorator';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Xác Thực')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   // ! Các validation chỉ check ở Controller, không check ở Service
 

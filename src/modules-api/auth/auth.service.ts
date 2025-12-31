@@ -93,7 +93,7 @@ export class AuthService {
   }
 
   getInfo(req: any) {
-    // delete req.user.pass_word;
+    delete req.user.pass_word;
     return req.user;
   }
 

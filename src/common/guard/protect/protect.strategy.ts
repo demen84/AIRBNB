@@ -26,6 +26,9 @@ export class ProtectStrategy extends PassportStrategy(Strategy, 'protect') {
       where: {
         id: decode.userId,
       },
+      // select: {
+      //   id: true, name: true, email: true, avatar: true, gender: true, phone: true, role: true, birth_day: true
+      // }
     });
     if (!userExist) {
       throw new UnauthorizedException('Người dùng không hợp lệ');

@@ -27,7 +27,7 @@ import {
 @ApiTags('Quản Lý Phòng')
 @Controller('phong')
 export class PhongController {
-  constructor(private readonly phongService: PhongService) {}
+  constructor(private readonly phongService: PhongService) { }
 
   @Post()
   create(@Body() createPhongDto: CreatePhongDto) {
@@ -39,20 +39,20 @@ export class PhongController {
   @ApiBearerAuth() // Bật Lock symbol tại api lấy danh sách Phòng
   @ApiOperation({ summary: 'Lấy danh sách phòng (phân trang + tìm kiếm)' })
   @ApiResponse({ status: 200, description: 'Trả về danh sách phòng' })
-  // ===== HIỂN THỊ CÁC QUERY PARAM TRÊN SWAGGER =====
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Số trang (bắt đầu từ 1)',
-    example: 1,
-  })
+  // ===== HIỂN THỊ CÁC QUERY PARAM TRÊN SWAGGER =====  
   @ApiQuery({
     name: 'pageSize',
     required: false,
     type: Number,
     description: 'Số lượng phòng mỗi trang',
     example: 10,
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Số trang (bắt đầu từ 1)',
+    example: 1,
   })
   findAll(@Query() queryDto: QueryDto, @Req() req: any) {
     // console.log(req.user);

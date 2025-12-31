@@ -16,10 +16,10 @@ import { CheckPermisionStrategy } from './common/guard/check-permission/check-pe
   imports: [
     ConfigModule.forRoot(),
     AuthModule,
+    NguoidungModule,
     PrismaModule,
     TokenModule,
     VitriModule,
-    NguoidungModule,
     PhongModule,
   ],
   controllers: [AppController],

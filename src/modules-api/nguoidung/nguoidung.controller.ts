@@ -2,10 +2,12 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { NguoidungService } from './nguoidung.service';
 import { CreateNguoidungDto } from './dto/create-nguoidung.dto';
 import { UpdateNguoidungDto } from './dto/update-nguoidung.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Quản Lý Người Dùng')
 @Controller('nguoidung')
 export class NguoidungController {
-  constructor(private readonly nguoidungService: NguoidungService) {}
+  constructor(private readonly nguoidungService: NguoidungService) { }
 
   @Post()
   create(@Body() createNguoidungDto: CreateNguoidungDto) {
