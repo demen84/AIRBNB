@@ -8,18 +8,15 @@ import {
   Delete,
   Query,
   Req,
-  UseGuards,
 } from '@nestjs/common';
 import { PhongService } from './phong.service';
 import { CreatePhongDto } from './dto/create-phong.dto';
 import { UpdatePhongDto } from './dto/update-phong.dto';
-import { QueryDto } from './dto/query.dto';
-import { AuthGuard } from '@nestjs/passport';
+import { PaginationQueryDto } from './dto/query.dto';
 import { SkipPermission } from 'src/common/decorators/check-permission.decorator';
 import {
   ApiBearerAuth,
   ApiOperation,
-  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -27,7 +24,7 @@ import {
 @ApiTags('Quản Lý Phòng')
 @Controller('phong')
 export class PhongController {
-  constructor(private readonly phongService: PhongService) { }
+  constructor(private readonly phongService: PhongService) {}
 
   @Post()
   create(@Body() createPhongDto: CreatePhongDto) {
@@ -39,22 +36,7 @@ export class PhongController {
   @ApiBearerAuth() // Bật Lock symbol tại api lấy danh sách Phòng
   @ApiOperation({ summary: 'Lấy danh sách phòng (phân trang + tìm kiếm)' })
   @ApiResponse({ status: 200, description: 'Trả về danh sách phòng' })
-  // ===== HIỂN THỊ CÁC QUERY PARAM TRÊN SWAGGER =====  
-  @ApiQuery({
-    name: 'pageSize',
-    required: false,
-    type: Number,
-    description: 'Số lượng phòng mỗi trang',
-    example: 10,
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Số trang (bắt đầu từ 1)',
-    example: 1,
-  })
-  findAll(@Query() queryDto: QueryDto, @Req() req: any) {
+  findAll(@Query() queryDto: PaginationQueryDto, @Req() req: any) {
     // console.log(req.user);
     return this.phongService.findAll(queryDto);
   }

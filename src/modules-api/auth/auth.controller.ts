@@ -2,15 +2,20 @@ import { Body, Controller, Get, Post, Query, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { QueryDto } from '../phong/dto/query.dto';
+import { PaginationQueryDto } from '../phong/dto/query.dto';
 import { PublicDecorator } from 'src/common/decorators/public.decorator';
 import { SkipPermission } from 'src/common/decorators/check-permission.decorator';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 @ApiTags('Xác Thực')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   // ! Các validation chỉ check ở Controller, không check ở Service
 
@@ -36,7 +41,9 @@ export class AuthController {
   @SkipPermission()
   @Get()
   @ApiBearerAuth() // Bật Lock symbol tại api get all user
-  finAll(@Query() queryDto: QueryDto, @Req() req: any) {
+  @ApiOperation({ summary: 'Lấy danh sách người dùng (phân trang + tìm kiếm)' })
+  @ApiResponse({ status: 200, description: 'Trả về danh sách người dùng' })
+  finAll(@Query() queryDto: PaginationQueryDto, @Req() req: any) {
     return this.authService.findAll(queryDto);
   }
 }
