@@ -46,11 +46,11 @@ export class CheckPermisionStrategy extends PassportStrategy(
     });
 
     if (!rolePermission) {
-      console.log('check-permission', {
-        method: method,
-        endpoint,
-        roleId: user.roleId,
-      });
+      // console.log('check-permission', {
+      //   method: method,
+      //   endpoint,
+      //   roleId: user.roleId,
+      // });
       throw new BadRequestException('Người dùng không đủ quyền');
     }
     /**

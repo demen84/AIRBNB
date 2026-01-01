@@ -26,7 +26,7 @@ export class CheckPermissionGuard extends AuthGuard('check-permission') {
       context.getHandler(),
       context.getClass(),
     ]);
-    console.log({ isPublic });
+    // console.log({ isPublic });
 
     if (isPublic === true) {
       return true;

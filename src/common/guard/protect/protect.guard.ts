@@ -19,14 +19,14 @@ export class ProtectGuard extends AuthGuard('protect') {
   canActivate(context: ExecutionContext) {
     // hàm canActivate sẽ luôn luôn được chạy đầu tiên, để kiểm tra đầu vào xem api đó có muốn kiểm tra token hay không
     // nếu api đó được đánh dấu @Public thì chúng ta sẽ bỏ qua không kiểm tra token với api đó
-    console.log('canActivate');
+    // console.log('canActivate');
     // Add your custom authentication logic here
     // for example, call super.logIn(request) to establish a session.
     const isPublic = this.reflector.getAllAndOverride(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
-    console.log({ isPublic });
+    // console.log({ isPublic });
 
     if (isPublic === true) {
       return true;
@@ -38,7 +38,7 @@ export class ProtectGuard extends AuthGuard('protect') {
 
   // 4. thành công hay thất bại thì sẽ luôn luôn chạy cuối cùng
   handleRequest(err: any, user: any, info: any) {
-    console.log('handleRequest', { err, user, info });
+    // console.log('handleRequest', { err, user, info });
     // err: là lỗi có trong hệ thống do mình tạo ra (exception: BadRequestException)
     // info: lỗi của jwt
 

@@ -18,7 +18,7 @@ export class ProtectStrategy extends PassportStrategy(Strategy, 'protect') {
 
   // 3: Chỉ chạy khi kiểm tra token thành công
   async validate(decode: any) {
-    console.log('Validate', decode);
+    // console.log('Validate', decode);
     if (!decode?.userId) {
       throw new UnauthorizedException('Token không hợp lệ.');
     }
