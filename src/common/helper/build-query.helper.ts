@@ -1,5 +1,6 @@
 export const buildQuery = (query) => {
-    let { page, pageSize, filters } = query;
+    // Support both `pageSize` and `limit` as the per-page parameter
+    let { page, pageSize, limit, filters } = query;
 
     // Xử lý filters:
     filters = JSON.parse(filters || "{}") || {};
@@ -26,7 +27,12 @@ export const buildQuery = (query) => {
     // console.log('\n');
 
     const pageDefault = 1;
-    const pageSizeDefault = 3;
+    const pageSizeDefault = 5; // align default per-page size with DTO (pageSize = 5)
+
+    // If client provided `limit`, prefer it over `pageSize`
+    if (typeof pageSize === 'undefined' && typeof limit !== 'undefined') {
+        pageSize = limit;
+    }
 
     // Xử lý chuyển từ text sang number & xử lý lấy số dương (ko lấy số âm) & lấy con số ko lấy text
     page = Math.max(pageDefault, Number(page) || pageDefault);

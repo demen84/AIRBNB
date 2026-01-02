@@ -11,10 +11,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
-@ApiTags('Xác Thực')
+@ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   // ! Các validation chỉ check ở Controller, không check ở Service
 

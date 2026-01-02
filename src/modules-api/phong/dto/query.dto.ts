@@ -40,6 +40,18 @@ export class PaginationQueryDto {
   pageSize?: number = 5;
 
   @ApiProperty({
+    description: 'Alias cho `pageSize` (hỗ trợ `limit` query param)',
+    example: 5,
+    required: false,
+    minimum: 1,
+    maximum: 100,
+  })
+  @IsOptional()
+  @Transform(({ value }) => parseInt(value, 10))
+  @IsNumber({}, { message: 'Phải là số nguyên' })
+  @Min(1)
+  limit?: number;
+  @ApiProperty({
     description: 'Tìm kiếm theo tên',
     example: 'gia_tri_tiem_kiem',
     required: false,

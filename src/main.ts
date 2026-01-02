@@ -38,6 +38,9 @@ async function bootstrap() {
   // Gắn Swagger: http://localhost:3839/docs
   initSwagger(app);
 
+  // main.ts
+  // console.log("Database URL check:", process.env.DATABASE_URL);
+
   //Dòng này tương đương app.listen() bên express
   await app.listen(PORT ?? 3000, () => {
     console.log(`Server is running at http://localhost:${PORT}`);

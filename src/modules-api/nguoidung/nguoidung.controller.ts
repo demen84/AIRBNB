@@ -24,8 +24,9 @@ import { PaginationQueryDto } from '../phong/dto/query.dto';
 @ApiTags('Quản Lý Người Dùng')
 @Controller('nguoidung')
 export class NguoidungController {
-  constructor(private readonly nguoidungService: NguoidungService) {}
+  constructor(private readonly nguoidungService: NguoidungService) { }
 
+  // Lấy danh sách users
   @SkipPermission()
   @Get()
   @ApiBearerAuth() // Bật Lock symbol
@@ -35,6 +36,7 @@ export class NguoidungController {
     return this.nguoidungService.findAll(queryDto);
   }
 
+  // Update thông tin user
   // ! Người dùng chỉ có thể update thông tin của chính mình
   @Patch(':id')
   @ApiBearerAuth() // Bật Lock symbol
@@ -58,16 +60,16 @@ export class NguoidungController {
       throw new ForbiddenException('Không tìm thấy thông tin người dùng');
     }
 
-    const userIdFromToken = currentUser.id;
     const targetId = +id;
+    const userIdFromToken = currentUser.id;
 
-    if (userIdFromToken !== targetId) {
-      throw new ForbiddenException(
-        'Bạn chỉ có thể cập nhật thông tin của chính mình',
-      );
-    }
+    // if (userIdFromToken !== targetId) {
+    //   throw new ForbiddenException(
+    //     'Bạn chỉ có thể cập nhật thông tin của chính mình',
+    //   );
+    // }
 
-    return this.nguoidungService.update(targetId, updateNguoidungDto);
+    return this.nguoidungService.update(targetId, updateNguoidungDto, userIdFromToken);
   }
 
   // Có nên làm chức năng xóa hay không? Chỉ admin mới có quyền xóa (banned) user

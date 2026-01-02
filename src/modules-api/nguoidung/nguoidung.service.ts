@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 // import { CreateNguoidungDto } from './dto/create-nguoidung.dto';
 import { UpdateNguoidungDto } from './dto/update-nguoidung.dto';
 import { PaginationQueryDto } from '../phong/dto/query.dto';
@@ -11,7 +11,7 @@ export class NguoidungService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokenService: TokenService,
-  ) {}
+  ) { }
 
   async findAll(queryDto: PaginationQueryDto) {
     const { page, pageSize, filters, skip } = buildQuery(queryDto);
@@ -55,14 +55,18 @@ export class NguoidungService {
     };
   }
 
-  async update(id: number, updateNguoidungDto: UpdateNguoidungDto) {
+  async update(id: number, updateNguoidungDto: UpdateNguoidungDto, currentUserId: Number) {
     // Kiểm tra xem user có tồn tại không
-    const user = await this.prisma.nguoidung.findUnique({
+    const userExists = await this.prisma.nguoidung.findUnique({
       where: { id },
     });
 
-    if (!user) {
+    if (!userExists) {
       throw new NotFoundException('Người dùng không tồn tại');
+    }
+
+    if (userExists.id != currentUserId) {
+      throw new ForbiddenException('Bạn chỉ có thể cập nhật thông tin của chính mình');
     }
 
     // Cập nhật (chỉ các trường được gửi lên)
