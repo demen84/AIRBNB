@@ -72,7 +72,7 @@ export class NguoidungController {
     return this.nguoidungService.update(targetId, updateNguoidungDto, userIdFromToken);
   }
 
-  // Có nên làm chức năng xóa hay không? Chỉ admin mới có quyền xóa (banned) user
+  // Xóa người dùng. Chỉ admin mới có quyền xóa (banned) user
   @Delete(':id')
   @ApiOperation({
     summary: 'Xóa thông tin người dùng. Chỉ Admin mới có quyền xóa người dùng',
@@ -81,7 +81,7 @@ export class NguoidungController {
     status: 200,
     description: 'Xóa người dùng thành công',
   })
-  remove(@Param('id') id: string) {
-    return this.nguoidungService.remove(+id);
+  delete(@Param('id') id: string) {
+    return this.nguoidungService.delete(+id);
   }
 }

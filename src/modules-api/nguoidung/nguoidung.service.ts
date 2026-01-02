@@ -98,8 +98,8 @@ export class NguoidungService {
     };
   }
 
-  // Liệu có nên làm chức năng xóa người dùng???
-  remove(id: number) {
-    return `This action removes a #${id} nguoidung`;
+  // Chỉ có admin mới có quyền xóa người dùng
+  delete(id: number) {
+    return `This action delete a #${id} nguoidung`;
   }
 }
