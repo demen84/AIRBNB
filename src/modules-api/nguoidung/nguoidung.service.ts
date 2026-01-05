@@ -162,7 +162,7 @@ export class NguoidungService {
         error instanceof BadRequestException
       ) { throw error; }
 
-      // Nếu là lỗi 404 thì ném ra tiếp, còn lại là lỗi server
+      // Lỗi server
       throw new InternalServerErrorException('Có lỗi xảy ra khi thực hiện khóa người dùng');
     }
   }

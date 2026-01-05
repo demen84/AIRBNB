@@ -13,7 +13,7 @@ export class UpdateNguoidungDto {
     description: 'Họ và tên người dùng',
     required: false,
   })
-  @IsOptional()
+  @IsOptional() // Có/không update trường này cũng được
   @IsString()
   @Length(2, 150)
   name?: string;
@@ -23,7 +23,7 @@ export class UpdateNguoidungDto {
     description: 'Số điện thoại',
     required: false,
   })
-  @IsOptional()
+  @IsOptional() // Có/không update trường này cũng được
   @IsString()
   @Length(10, 30)
   phone?: string;
@@ -33,7 +33,7 @@ export class UpdateNguoidungDto {
     description: 'Ngày sinh (định dạng YYYY-MM-DD)',
     required: false,
   })
-  @IsOptional()
+  @IsOptional() // Có/không update trường này cũng được
   @IsString()
   birth_day?: string;
 
@@ -43,7 +43,7 @@ export class UpdateNguoidungDto {
     enum: ['nam', 'nữ', 'khác'],
     required: false,
   })
-  @IsOptional()
+  @IsOptional() // Có/không update trường này cũng được
   @IsString()
   @IsEnum(['nam', 'nữ', 'khác'])
   gender?: string;
@@ -53,12 +53,13 @@ export class UpdateNguoidungDto {
     description: 'Link ảnh đại diện',
     required: false,
   })
-  @IsOptional()
+  @IsOptional() // Có/không update trường này cũng được
   @IsString()
   avatar?: string;
 
   // Không cho phép update các trường nhạy cảm qua route này:
-  // - email: thường đã xác thực, không cho thay đổi dễ dàng
+  // - email: thường đã xác thực, không cho thay đổi
   // - pass_word: phải có route riêng (change-password) với xác thực cũ
   // - role: chỉ admin mới được thay đổi (nếu cần)
+  // - status: chỉ admin mới được thay đổi (nếu cần)
 }
