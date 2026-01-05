@@ -54,6 +54,10 @@ CREATE TABLE NguoiDung (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+ALTER TABLE nguoidung 
+ADD COLUMN status ENUM('active', 'banned', 'pending') DEFAULT 'active',
+ADD COLUMN banned_at DATETIME DEFAULT NULL;
+
 -- Table DatPhong
 CREATE TABLE DatPhong (
     id INT AUTO_INCREMENT PRIMARY KEY,

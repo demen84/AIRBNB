@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
@@ -61,6 +61,10 @@ export class AuthService {
 
     if (!userExist) {
       throw new BadRequestException(`Người dùng chưa tồn tại. Hãy đăng ký`);
+    }
+
+    if (userExist.status === 'banned' || userExist.status === 'pending') {
+      throw new ForbiddenException('Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Admin.');
     }
 
     if (!pass_word || pass_word.length === 0) {

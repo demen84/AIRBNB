@@ -63,25 +63,23 @@ export class NguoidungController {
     const targetId = +id;
     const userIdFromToken = currentUser.id;
 
-    // if (userIdFromToken !== targetId) {
-    //   throw new ForbiddenException(
-    //     'Bạn chỉ có thể cập nhật thông tin của chính mình',
-    //   );
-    // }
-
     return this.nguoidungService.update(targetId, updateNguoidungDto, userIdFromToken);
   }
 
   // Xóa người dùng. Chỉ admin mới có quyền xóa (banned) user
   @Delete(':id')
-  @ApiOperation({
-    summary: 'Xóa thông tin người dùng. Chỉ Admin mới có quyền xóa người dùng',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Xóa người dùng thành công',
-  })
-  delete(@Param('id') id: string) {
-    return this.nguoidungService.delete(+id);
+  @ApiBearerAuth() // Bật Lock symbol
+  @ApiOperation({ summary: 'Khóa người dùng (chỉ quyền admin)' })
+  @ApiResponse({ status: 200, description: 'Khóa người dùng thành công' })
+  @ApiResponse({ status: 403, description: 'Chỉ admin mới có quyền khóa' })
+  @ApiResponse({ status: 404, description: 'Người dùng không tồn tại' })
+  @ApiResponse({ status: 400, description: 'Không thể tự khóa hoặc khóa admin khác' })
+  banUser(@Param('id') id: string, @Req() req: Request) {
+    const currentUser = req.user as any;
+    // const adminRole = req.user?.role; // Lấy role từ token
+    return this.nguoidungService.banUser(+id, {
+      id: currentUser.id,
+      role: currentUser.role,
+    });
   }
 }

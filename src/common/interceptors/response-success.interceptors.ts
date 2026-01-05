@@ -27,7 +27,7 @@ export class ResponseSuccessInterceptor implements NestInterceptor {
         return {
           status: 'Success',
           statusCode: res.statusCode,
-          message: data.thongBao || 'ok', // || message
+          message: data.thongBao || "OK",
           data,
           docs: 'example api',
         };

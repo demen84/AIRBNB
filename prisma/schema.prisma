@@ -1,9 +1,9 @@
 generator client {
-  provider            = "prisma-client"
-  output              = "../src/modules-system/prisma/generated/prisma"
-  moduleFormat = "cjs"
-  generatedFileExtension = "ts"   // Giữ file generate là .ts
-  importFileExtension    = "ts"   // Buộc import dùng đuôi .ts thay vì .js
+  provider               = "prisma-client"
+  output                 = "../src/modules-system/prisma/generated/prisma"
+  generatedFileExtension = "ts"
+  importFileExtension    = "ts"
+  moduleFormat           = "cjs"
 }
 
 datasource db {
@@ -45,17 +45,19 @@ model datphong {
 }
 
 model nguoidung {
-  id         Int        @id @default(autoincrement())
-  name       String     @db.VarChar(255)
-  email      String     @unique(map: "email") @db.VarChar(255)
-  pass_word  String     @db.VarChar(255)
-  phone      String?    @db.VarChar(20)
-  birth_day  String?    @db.VarChar(20)
-  gender     String?    @db.VarChar(10)
-  role       String?    @default("user") @db.VarChar(20)
-  avatar     String?    @db.VarChar(255)
-  created_at DateTime?  @default(now()) @db.DateTime(0)
-  updated_at DateTime?  @default(now()) @db.DateTime(0)
+  id         Int               @id @default(autoincrement())
+  name       String            @db.VarChar(255)
+  email      String            @unique(map: "email") @db.VarChar(255)
+  pass_word  String            @db.VarChar(255)
+  phone      String?           @db.VarChar(20)
+  birth_day  String?           @db.VarChar(20)
+  gender     String?           @db.VarChar(10)
+  role       String?           @default("user") @db.VarChar(20)
+  avatar     String?           @db.VarChar(255)
+  created_at DateTime?         @default(now()) @db.DateTime(0)
+  updated_at DateTime?         @default(now()) @db.DateTime(0)
+  status     nguoidung_status? @default(active)
+  banned_at  DateTime?         @db.DateTime(0)
   binhluan   binhluan[]
   datphong   datphong[]
 }
@@ -105,4 +107,10 @@ enum datphong_trang_thai {
   pending
   confirmed
   cancelled
+}
+
+enum nguoidung_status {
+  active
+  banned
+  pending
 }
