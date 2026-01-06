@@ -10,6 +10,9 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { ThrottlerGuard } from '@nestjs/throttler';
+import { UseGuards } from '@nestjs/common';
+import { RegisterThrottlerGuard } from 'src/common/guard/throttler/register-throttler.guard';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -19,6 +22,8 @@ export class AuthController {
   // ! Các validation chỉ check ở Controller, không check ở Service
 
   @PublicDecorator()
+  // @UseGuards(ThrottlerGuard) // Kích hoạt bộ đếm giới hạn tại đây
+  @UseGuards(RegisterThrottlerGuard)
   @Post('register')
   @ApiOperation({ summary: 'Đăng ký người dùng' })
   @ApiResponse({

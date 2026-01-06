@@ -57,7 +57,7 @@ export class AuthService {
     //   role: newUser.role,
     // });
 
-    // 6. Trả về kết quả Response
+    // 6. Trả kết quả Response
     return {
       message: 'Đăng ký thành công',
       data: newUser
