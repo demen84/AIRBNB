@@ -45,7 +45,7 @@ CREATE TABLE NguoiDung (
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     pass_word VARCHAR(255) NOT NULL,
-    phone VARCHAR(20),
+    phone VARCHAR(20) UNIQUE,
     birth_day VARCHAR(20),
     gender VARCHAR(10),
     role VARCHAR(20) DEFAULT 'user',

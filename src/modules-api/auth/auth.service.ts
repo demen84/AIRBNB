@@ -10,16 +10,19 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokenService: TokenService,
-  ) {}
+  ) { }
 
   async register(registerDto: RegisterDto) {
     const { name, email, pass_word } = registerDto;
-    // console.log({ name, email, pass_word });
 
-    // Xử lý kiểm tra account có tồn tại hay chưa? nếu chưa thì cho register, else thì thông báo user đã có rùi
+    // 1. Chuẩn hóa input
+    const normalizedEmail = email.toLowerCase().trim();
+    // const trimmedName = name.trim();
+
+    // 2. Kiểm tra email đã tồn tại chưa
     const userExist = await this.prisma.nguoidung.findUnique({
       where: {
-        email: email, // key email là cột trong db (bảng users)
+        email: normalizedEmail, // key email là cột trong db (bảng users)
       },
     });
 
@@ -27,27 +30,42 @@ export class AuthService {
       throw new BadRequestException(`Người dùng này đã tồn tại.`);
     }
 
-    // hash: băm (không thể dịch ngược)$
-    const hashPassword = bcrypt.hashSync(pass_word, 10);
+    // 3. Hash password: băm (không thể dịch ngược)$
+    const hashPassword = await bcrypt.hash(pass_word, 10);
 
+    // 4. Tạo user mới với các giá trị mặc định
     const newUser = await this.prisma.nguoidung.create({
       data: {
-        email: email,
+        email: normalizedEmail,
         pass_word: hashPassword,
-        name: name,
+        name: name.trim(),
       },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        status: true,
+        created_at: true
+      }
     });
 
-    // console.log({ email, pass_word, name, userExist });
+    // // 5. Tạo access token luôn (đăng ký xong tự login)
+    // const accessToken = this.tokenService.generateAccessToken({
+    //   id: newUser.id,
+    //   email: newUser.email,
+    //   role: newUser.role,
+    // });
 
-    // return {
-    //     title: "Register",
-    //     email: email,
-    //     password: password,
-    //     fullName: fullName
-    // };
-    return 'Đăng ký người dùng mới thành công.'; //newUser;// vì các data về email, password là bảo mật, chỉ khi nào frontend cần thì mới return newUser
-    // return body;
+    // 6. Trả về kết quả Response
+    return {
+      message: 'Đăng ký thành công',
+      data: newUser
+      // data: {
+      //   user: newUser,
+      //   access_token: accessToken,
+      // },
+    };
   }
 
   async login(loginDto: LoginDto) {

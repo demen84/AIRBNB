@@ -49,7 +49,7 @@ model nguoidung {
   name       String            @db.VarChar(255)
   email      String            @unique(map: "email") @db.VarChar(255)
   pass_word  String            @db.VarChar(255)
-  phone      String?           @db.VarChar(20)
+  phone      String?           @unique(map: "phone") @db.VarChar(20)
   birth_day  String?           @db.VarChar(20)
   gender     String?           @db.VarChar(10)
   role       String?           @default("user") @db.VarChar(20)

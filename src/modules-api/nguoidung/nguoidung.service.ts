@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-// import { CreateNguoidungDto } from './dto/create-nguoidung.dto';
+import { Prisma } from '../../modules-system/prisma/generated/prisma/client';
 import { UpdateNguoidungDto } from './dto/update-nguoidung.dto';
 import { PaginationQueryDto } from '../phong/dto/query.dto';
 import { buildQuery } from 'src/common/helper/build-query.helper';
@@ -57,46 +57,161 @@ export class NguoidungService {
   }
 
   async update(id: number, updateNguoidungDto: UpdateNguoidungDto, currentUserId: Number) {
-    // Kiểm tra xem user có tồn tại không
-    const userExists = await this.prisma.nguoidung.findUnique({
-      where: { id },
-    });
+    try {
+      // 1. Kiểm tra xem user có tồn tại không
+      const userExists = await this.prisma.nguoidung.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          status: true,
+          role: true,
+        }
+      });
 
-    if (!userExists) {
-      throw new NotFoundException('Người dùng không tồn tại');
-    }
+      if (!userExists) {
+        throw new NotFoundException('Người dùng không tồn tại');
+      }
 
-    if (userExists.id != currentUserId) {
-      throw new ForbiddenException('Bạn chỉ có thể cập nhật thông tin của chính mình');
-    }
+      // 2. Chỉ cho phép tự update chính mình
+      if (userExists.id != currentUserId) {
+        throw new ForbiddenException('Bạn chỉ có thể cập nhật thông tin của chính mình');
+      }
 
-    // Cập nhật (chỉ các trường được gửi lên)
-    const updatedUser = await this.prisma.nguoidung.update({
-      where: { id },
-      data: {
-        ...updateNguoidungDto,
+      // 3. Nếu user bị banned thì không cho update profile (trừ trường hợp admin)
+      if (userExists.status === nguoidung_status.banned) {
+        throw new ForbiddenException('Tài khoản đã bị khóa nên không thể cập nhật thông tin.');
+      }
+
+      // 4. Explicit data update - chỉ cho phép các field an toàn
+      //    Điều này ngăn chặn hoàn toàn việc update role/status/email/pass_word/banned_at...
+      const updateData: any = {
         updated_at: new Date(),
-        // Không cho phép update role qua route này
-        // Không cho phép update email nếu bạn muốn giữ unique nghiêm ngặt
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        birth_day: true,
-        gender: true,
-        avatar: true,
-        role: true,
-        created_at: true,
-        updated_at: true,
-      },
-    });
+      };
 
-    return {
-      message: 'Cập nhật thông tin người dùng thành công',
-      data: updatedUser,
-    };
+      if (updateNguoidungDto.name !== undefined) {
+        updateData.name = updateNguoidungDto.name.trim();
+      }
+      if (updateNguoidungDto.phone !== undefined) {
+        const phone = updateNguoidungDto.phone.trim();
+        // Kiểm tra thêm số phone có hợp lệ
+        if (!/^0[1-9]\d{8,9}$/.test(phone)) {
+          throw new BadRequestException('Số điện thoại không hợp lệ.');
+        }
+
+        // Kiểm tra phone đã tồn tại ở user khác chưa
+        // ! Nếu ở db đã có unique cho cột phoen thì không cần đoạn code sau:
+        // const existingUserWithPhone = await this.prisma.nguoidung.findFirst({
+        //   where: {
+        //     phone: phone,
+        //     id: { not: id }, // Loại trừ chính user đang update
+        //   },
+        // });
+
+        // if (existingUserWithPhone) {
+        //   throw new BadRequestException('Số điện thoại này đã được sử dụng bởi người dùng khác');
+        // }
+
+        updateData.phone = phone;
+      }
+      if (updateNguoidungDto.birth_day !== undefined) {
+        const birthDayStr = updateNguoidungDto.birth_day;
+
+        // Validate định dạng YYYY-MM-DD
+        // const regDate: string = "/^\d{4}-\d{2}-\d{2}$/";
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDayStr)) {
+          throw new BadRequestException('Ngày sinh phải có định dạng YYYY-MM-DD');
+        }
+
+        const birthDate = new Date(birthDayStr);
+
+        if (isNaN(birthDate.getTime())) {
+          throw new BadRequestException('Ngày sinh không hợp lệ');
+        }
+
+        // Không cho ngày sinh ở tương lai
+        const today = new Date();
+        if (birthDate > today) {
+          throw new BadRequestException('Ngày sinh không được ở tương lai');
+        }
+
+        // Kiểm tra tuổi >= 13
+        const age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        const dayDiff = today.getDate() - birthDate.getDate();
+
+        let adjustedAge = age;
+        if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+          adjustedAge--;
+        }
+
+        if (adjustedAge < 13) {
+          throw new BadRequestException('Bạn phải từ 13 tuổi trở lên để sử dụng dịch vụ');
+        }
+
+        updateData.birth_day = birthDayStr;
+      }
+      if (updateNguoidungDto.gender !== undefined) {
+        updateData.gender = updateNguoidungDto.gender.trim();
+      }
+      if (updateNguoidungDto.avatar !== undefined) {
+        // // Basic sanitize URL
+        // if (!updateNguoidungDto.avatar.startsWith('http')) {
+        //   throw new BadRequestException('Avatar phải là URL hợp lệ');
+        // } // ==> Xử lý sau
+        updateData.avatar = updateNguoidungDto.avatar.trim();
+      }
+
+      // Nếu không có field nào để update
+      if (Object.keys(updateData).length === 1) { // chỉ có updated_at
+        throw new BadRequestException('Không có thông tin nào để cập nhật');
+      }
+
+      // Cập nhật (chỉ các trường được gửi lên)
+      const updatedUser = await this.prisma.nguoidung.update({
+        where: { id },
+        data: updateData,
+        // data: {
+        //   ...updateNguoidungDto,
+        //   updated_at: new Date(),
+        //   // Không cho phép update role qua route này
+        //   // Không cho phép update email nếu bạn muốn giữ unique nghiêm ngặt
+        // },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          birth_day: true,
+          gender: true,
+          avatar: true,
+          role: true,
+          created_at: true,
+          updated_at: true,
+        },
+      });
+
+      return {
+        message: 'Cập nhật thông tin người dùng thành công',
+        data: updatedUser,
+      };
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+
+      // Optional: Xử lý lỗi Prisma unique violation (nếu sau này thêm @unique cho phone trong schema)
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new BadRequestException('Số điện thoại này đã được sử dụng');
+        }
+      }
+
+      throw new InternalServerErrorException('Lỗi hệ thống khi cập nhật');
+    }
   }
 
   // Chỉ có admin mới có quyền xóa người dùng
@@ -163,7 +278,7 @@ export class NguoidungService {
       ) { throw error; }
 
       // Lỗi server
-      throw new InternalServerErrorException('Có lỗi xảy ra khi thực hiện khóa người dùng');
+      throw new InternalServerErrorException('500 - Lỗi hệ thống');
     }
   }
 }
