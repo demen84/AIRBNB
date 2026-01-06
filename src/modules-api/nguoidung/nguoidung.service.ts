@@ -50,7 +50,7 @@ export class NguoidungService {
       thongBao: 'Lấy danh sách Người dùng thành công',
       page: page,
       pageSize: pageSize,
-      totalItem: totalItem, // SL bài viết
+      totalItem: totalItem, 
       totalPage: totalPage, // SL trang
       items: users || [],
     };

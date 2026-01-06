@@ -76,7 +76,6 @@ export class NguoidungController {
   @ApiResponse({ status: 400, description: 'Không thể tự khóa hoặc khóa admin khác' })
   banUser(@Param('id') id: string, @Req() req: Request) {
     const currentUser = req.user as any;
-    // const adminRole = req.user?.role; // Lấy role từ token
     return this.nguoidungService.banUser(+id, {
       id: currentUser.id,
       role: currentUser.role,
