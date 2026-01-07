@@ -7,9 +7,15 @@ import { CheckPermissionGuard } from './common/guard/check-permission/check-perm
 import { LoggingInterceptor } from './common/interceptors/logging.interceptors';
 import { ResponseSuccessInterceptor } from './common/interceptors/response-success.interceptors';
 import { initSwagger } from './common/swagger/init.swagger';
+// 1. import
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // const app = await NestFactory.create(AppModule);
+
+  // 2. Ép kiểu NestExpressApplication
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   const reflector = app.get(Reflector);
 
@@ -31,6 +37,12 @@ async function bootstrap() {
   // Gắn interceptor ở Global:
   app.useGlobalInterceptors(new LoggingInterceptor());
   app.useGlobalInterceptors(new ResponseSuccessInterceptor(reflector));
+
+  // 3. Cấu hình Static Assets (Đặt trước listen)
+  // Giả sử ảnh bạn lưu ở thư mục gốc /uploads
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/public/',
+  });
 
   // Thêm api trong endpoint:
   app.setGlobalPrefix('api');
