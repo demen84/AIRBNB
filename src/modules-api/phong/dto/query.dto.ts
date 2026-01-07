@@ -52,8 +52,8 @@ export class PaginationQueryDto {
   @Min(1)
   limit?: number;
   @ApiProperty({
-    description: 'Tìm kiếm theo tên',
-    example: 'gia_tri_tiem_kiem',
+    description: 'Nhập giá trị tìm kiếm',
+    example: '',
     required: false,
   })
   @IsOptional()

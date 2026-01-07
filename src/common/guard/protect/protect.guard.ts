@@ -9,7 +9,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 import { IS_PUBLIC_KEY } from 'src/common/decorators/public.decorator';
 
-// @Injectable()
+@Injectable()
 export class ProtectGuard extends AuthGuard('protect') {
   //   private reflector: Reflector;
   constructor(private reflector: Reflector) {

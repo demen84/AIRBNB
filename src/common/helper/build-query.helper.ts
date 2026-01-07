@@ -1,4 +1,4 @@
-export const buildQuery = (query) => {
+export const buildQuery = (query: any) => {
     // Support both `pageSize` and `limit` as the per-page parameter
     let { page, pageSize, limit, filters } = query;
 
@@ -16,15 +16,6 @@ export const buildQuery = (query) => {
             filters[key] = { contains: value };
         }
     }
-
-    // console.log('\n');
-    // console.log("Kêt quả:", filters);
-    // console.log('\n');
-
-    // console.log('Mong muốn:', {
-    //     content: { contains: "abc" },
-    // });
-    // console.log('\n');
 
     const pageDefault = 1;
     const pageSizeDefault = 5; // align default per-page size with DTO (pageSize = 5)

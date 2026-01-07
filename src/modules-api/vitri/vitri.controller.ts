@@ -26,24 +26,23 @@ import { SkipPermission } from 'src/common/decorators/check-permission.decorator
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/common/guard/protect/roles.guard';
+import { ProtectGuard } from 'src/common/guard/protect/protect.guard';
 
 @ApiTags('Vị Trí')
 @Controller('vitri')
 export class VitriController {
-  constructor(private readonly vitriService: VitriService) {}
+  constructor(private readonly vitriService: VitriService) { }
 
   // Chỉ admin mới có quyền tạo vị trí mới
   @Post()
   @ApiBearerAuth() // Bật Lock symbol
-  // @Roles('admin') // Đánh dấu chỉ admin mới được vào
-  // @UseGuards(AuthGuard, RolesGuard) // Chạy AuthGuard trước để lấy user, sau đó RolesGuard check quyền
+  @Roles('admin') // Đánh dấu chỉ admin mới được vào
+  // ! QUAN TRỌNG: ProtectGuard phải đứng TRƯỚC RolesGuard
+  @UseGuards(ProtectGuard, RolesGuard)
   @ApiOperation({ summary: 'Thêm vị trí (chỉ quyền admin)' })
   @ApiResponse({ status: 200, description: 'Thêm vị trí thành công' })
-  create(@Body() createVitriDto: CreateVitriDto, @Req() req: Request) {
-    const currentUser = req.user as any;
-    const roleAdmin = currentUser.role;
-
-    return this.vitriService.create(createVitriDto, roleAdmin);
+  async create(@Body() createVitriDto: CreateVitriDto) {
+    return await this.vitriService.create(createVitriDto);
   }
 
   @PublicDecorator()
@@ -55,14 +54,24 @@ export class VitriController {
     return this.vitriService.findAll(queryDto);
   }
 
+  @PublicDecorator()
+  @SkipPermission()
   @Get(':id')
+  @ApiOperation({ summary: 'Lấy 1 vị trí cụ thể theo mã vị trí' })
+  @ApiResponse({ status: 200, description: 'Trả về thông tin vị trí' })
   findOne(@Param('id') id: string) {
     return this.vitriService.findOne(+id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateVitriDto: UpdateVitriDto) {
-    return this.vitriService.update(+id, updateVitriDto);
+  @ApiBearerAuth() // Bật Lock symbol
+  @Roles('admin') // Đánh dấu chỉ admin mới được vào
+  // ! QUAN TRỌNG: ProtectGuard phải đứng TRƯỚC RolesGuard
+  @UseGuards(ProtectGuard, RolesGuard)
+  @ApiOperation({ summary: 'Cập nhật vị trí (chỉ quyền admin)' })
+  @ApiResponse({ status: 200, description: 'Cập nhật vị trí thành công' })
+  async update(@Param('id') id: string, @Body() updateVitriDto: UpdateVitriDto) {
+    return await this.vitriService.update(+id, updateVitriDto);
   }
 
   @Delete(':id')
