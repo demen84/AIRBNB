@@ -1,4 +1,10 @@
-import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreatePhongDto } from './dto/create-phong.dto';
 import { UpdatePhongDto } from './dto/update-phong.dto';
 import { buildQuery } from 'src/common/helper/build-query.helper';
@@ -10,11 +16,28 @@ import { PaginationQueryDto } from './dto/query.dto';
 
 @Injectable()
 export class PhongService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createPhongDto: CreatePhongDto) {
     try {
-      const { ten_phong, mo_ta, khach, phong_ngu, giuong, phong_tam, gia_tien, may_giat, tivi, dieu_hoa, wifi, bep, do_xe, ho_boi, ban_ui, ma_vi_tri } = createPhongDto;
+      const {
+        ten_phong,
+        mo_ta,
+        khach,
+        phong_ngu,
+        giuong,
+        phong_tam,
+        gia_tien,
+        may_giat,
+        tivi,
+        dieu_hoa,
+        wifi,
+        bep,
+        do_xe,
+        ho_boi,
+        ban_ui,
+        ma_vi_tri,
+      } = createPhongDto;
 
       // 1. KIỂM TRA RÀNG BUỘC: Mã vị trí phải tồn tại trong bảng vitri
       const checkVitri = await this.prisma.vitri.findUnique({
@@ -23,21 +46,26 @@ export class PhongService {
 
       if (!checkVitri) {
         // Trả về 404 nếu không tìm thấy vị trí để gán phòng vào
-        throw new NotFoundException(`Mã vị trí ${createPhongDto.ma_vi_tri} không tồn tại trong hệ thống.`);
+        throw new NotFoundException(
+          `Mã vị trí #${createPhongDto.ma_vi_tri} không tồn tại trong hệ thống.`,
+        );
       }
 
       // 2. Thực hiện tạo phòng
       const newPhong = await this.prisma.phong.create({
-        data: createPhongDto
+        data: createPhongDto,
       });
 
       return {
         message: 'Thêm mới phòng thành công',
-        data: newPhong
-      }
+        data: newPhong,
+      };
     } catch (error) {
       // Chuyển tiếp các lỗi HTTP đã biết (404, 403...)
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
 
@@ -59,9 +87,9 @@ export class PhongService {
         ...(queryDto.keyword && {
           OR: [
             { ten_phong: { contains: queryDto.keyword } },
-            { mo_ta: { contains: queryDto.keyword } }
-          ]
-        })
+            { mo_ta: { contains: queryDto.keyword } },
+          ],
+        }),
       };
 
       const dataPromise = this.prisma.phong.findMany({
@@ -74,7 +102,7 @@ export class PhongService {
       });
 
       const totalItemPromise = this.prisma.phong.count({
-        where: whereCondition
+        where: whereCondition,
       });
 
       // 3. Truy vấn song song
@@ -106,12 +134,15 @@ export class PhongService {
     const data = await this.prisma.phong.findUnique({
       where: { id: id },
       select: {
-        id: true, ten_phong: true, gia_tien: true, giuong: true,
+        id: true,
+        ten_phong: true,
+        gia_tien: true,
+        giuong: true,
         ma_vi_tri: true,
         vitri: {
-          select: { ten_vi_tri: true }
-        }
-      }
+          select: { ten_vi_tri: true },
+        },
+      },
     });
     // if (data) {
     //   const { created_at, updated_at, ...result } = data;
@@ -125,7 +156,27 @@ export class PhongService {
   }
 
   async update(id: number, updatePhongDto: UpdatePhongDto) {
-    return `This action updates a #${id} phong`;
+    try {
+      // 1. Kiểm tra phòng có tồn tại không
+      const phong = await this.prisma.phong.findUnique({ where: { id } });
+      if (!phong)
+        throw new NotFoundException('Không tìm thấy phòng cần cập nhật');
+
+      // 2. Tiến hành cập nhật
+      const updatedData = await this.prisma.phong.update({
+        where: { id },
+        data: updatePhongDto,
+      });
+
+      return {
+        message: `Cập nhật thông tin phòng #${id} thành công`,
+        data: updatedData,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      console.error('Lỗi Update Prisma:', error);
+      throw new InternalServerErrorException('Lỗi hệ thống khi cập nhật phòng');
+    }
   }
 
   remove(id: number) {

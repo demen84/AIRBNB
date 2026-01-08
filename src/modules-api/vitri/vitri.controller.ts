@@ -40,7 +40,7 @@ import { ApiConsumes, ApiBody } from '@nestjs/swagger';
 @ApiTags('Vị Trí')
 @Controller('vitri')
 export class VitriController {
-  constructor(private readonly vitriService: VitriService) { }
+  constructor(private readonly vitriService: VitriService) {}
 
   // TẠO VỊ TRÍ MỚI
   // Chỉ admin mới có quyền tạo vị trí mới
@@ -127,7 +127,7 @@ export class VitriController {
       },
     }),
   )
-  @ApiOperation({ summary: 'Upload hình ảnh cho vị trí (Chỉ Admin)' })
+  @ApiOperation({ summary: 'Upload hình ảnh cho vị trí (chỉ admin)' })
   async uploadHinh(
     @Param('id', ParseIntPipe) id: number,
     @UploadedFile() file: Express.Multer.File,

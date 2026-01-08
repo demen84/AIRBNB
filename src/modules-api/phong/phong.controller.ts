@@ -38,14 +38,14 @@ import { PublicDecorator } from 'src/common/decorators/public.decorator';
 @ApiTags('Quản Lý Phòng')
 @Controller('phong')
 export class PhongController {
-  constructor(private readonly phongService: PhongService) { }
+  constructor(private readonly phongService: PhongService) {}
 
   // Chỉ admin mới có quyền create_new/update/delete phòng
   @Post()
   @ApiBearerAuth() // Bật Lock symbol
   @Roles('admin') // Đánh dấu chỉ admin mới vào được
   @UseGuards(ProtectGuard, RolesGuard)
-  @ApiOperation({ summary: 'Tạo phòng mới (chỉ quyền Admin' })
+  @ApiOperation({ summary: 'Tạo phòng mới (chỉ quyền Admin)' })
   @ApiResponse({ status: 200, description: 'Tạo phòng thành công' })
   async create(@Body() createPhongDto: CreatePhongDto) {
     return await this.phongService.create(createPhongDto);
@@ -71,6 +71,7 @@ export class PhongController {
     return this.phongService.findOne(+id);
   }
 
+  // UPDATE PHÒNG
   @Patch(':id')
   @ApiBearerAuth() // Bật Lock symbol
   @Roles('admin') // Đánh dấu chỉ admin mới được vào
@@ -81,7 +82,10 @@ export class PhongController {
     status: 200,
     description: 'Cập nhật thông tin phòng thành công',
   })
-  async update(@Param('id') id: string, @Body() updatePhongDto: UpdatePhongDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updatePhongDto: UpdatePhongDto,
+  ) {
     return await this.phongService.update(+id, updatePhongDto);
   }
 
