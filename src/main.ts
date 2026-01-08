@@ -10,12 +10,38 @@ import { initSwagger } from './common/swagger/init.swagger';
 // 1. import
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import * as fs from 'fs'; // Import thư viện File System (fs)
 
 async function bootstrap() {
   // const app = await NestFactory.create(AppModule);
 
   // 2. Ép kiểu NestExpressApplication
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // 1. Danh sách các thư mục cần khởi tạo
+  const folders = [
+    'uploads/vitri',
+    'uploads/phong',
+    'uploads/avatar_nguoi_dung'
+  ];
+
+  // 2. Tự động kiểm tra và tạo folder nếu chưa có
+  folders.forEach((folder) => {
+    const path = join(process.cwd(), folder);
+    if (!fs.existsSync(path)) {
+      fs.mkdirSync(path, { recursive: true });
+      console.log(`✅ Created folder: ${folder}`);
+    }
+  });
+
+  // 3. Cấu hình Static Assets để truy cập được tất cả ảnh trong folder uploads
+  // Với cấu hình này, ta có thể truy cập, vd:
+  // - http://localhost:3839/public/vitri/abc.jpg
+  // - http://localhost:3839/public/phong/room1.png
+  // - http://localhost:3839/public/nguoidung/avatar.webp
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/public/',
+  });
 
   const reflector = app.get(Reflector);
 

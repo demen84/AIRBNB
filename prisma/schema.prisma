@@ -72,7 +72,6 @@ model phong {
   mo_ta      String?    @db.Text
   gia_tien   Int
   may_giat   Boolean?   @default(false)
-  ban_la     Boolean?   @default(false)
   tivi       Boolean?   @default(false)
   dieu_hoa   Boolean?   @default(false)
   wifi       Boolean?   @default(false)

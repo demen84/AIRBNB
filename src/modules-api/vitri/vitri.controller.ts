@@ -40,7 +40,7 @@ import { ApiConsumes, ApiBody } from '@nestjs/swagger';
 @ApiTags('Vị Trí')
 @Controller('vitri')
 export class VitriController {
-  constructor(private readonly vitriService: VitriService) {}
+  constructor(private readonly vitriService: VitriService) { }
 
   // TẠO VỊ TRÍ MỚI
   // Chỉ admin mới có quyền tạo vị trí mới
@@ -90,24 +90,8 @@ export class VitriController {
     return await this.vitriService.update(+id, updateVitriDto);
   }
 
-  // XÓA VỊ TRÍ
-  @Delete(':id')
-  @ApiBearerAuth() // Bật Lock symbol
-  @Roles('admin') // Đánh dấu chỉ admin mới được vào
-  // ! QUAN TRỌNG: ProtectGuard phải đứng TRƯỚC RolesGuard
-  @UseGuards(ProtectGuard, RolesGuard)
-  @ApiOperation({ summary: 'Xóa vị trí (chỉ quyền admin)' })
-  @ApiResponse({ status: 200, description: 'Xóa vị trí thành công' })
-  @ApiResponse({
-    status: 400,
-    description: 'Vị trí đang có phòng, không thể xóa',
-  })
-  remove(@Param('id') id: string) {
-    return this.vitriService.remove(+id);
-  }
-
   // UPLOAD HÌNH ẢNH VỊ TRÍ
-  @Post('upload-hinh-vitri/:id')
+  @Post('upload-hinh/:id')
   @ApiConsumes('multipart/form-data') // Bắt buộc để Swagger hiện nút upload
   @ApiBody({
     schema: {
@@ -153,5 +137,21 @@ export class VitriController {
     }
     const fileName = file.filename;
     return this.vitriService.uploadHinh(id, fileName);
+  }
+
+  // XÓA VỊ TRÍ
+  @Delete(':id')
+  @ApiBearerAuth() // Bật Lock symbol
+  @Roles('admin') // Đánh dấu chỉ admin mới được vào
+  // ! QUAN TRỌNG: ProtectGuard phải đứng TRƯỚC RolesGuard
+  @UseGuards(ProtectGuard, RolesGuard)
+  @ApiOperation({ summary: 'Xóa vị trí (chỉ quyền admin)' })
+  @ApiResponse({ status: 200, description: 'Xóa vị trí thành công' })
+  @ApiResponse({
+    status: 400,
+    description: 'Vị trí đang có phòng, không thể xóa',
+  })
+  remove(@Param('id') id: string) {
+    return this.vitriService.remove(+id);
   }
 }

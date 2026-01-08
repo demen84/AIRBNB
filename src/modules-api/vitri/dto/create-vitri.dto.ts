@@ -26,5 +26,5 @@ export class CreateVitriDto {
   @MaxLength(255)
   quoc_gia: string;
 
-  // hinh_anh sẽ được xử lý riêng ở phần upload, tạm thời để trống hoặc IsOptional
+  // hinh_anh sẽ được xử lý riêng ở phần upload
 }

@@ -16,7 +16,7 @@ import { join } from 'path';
 
 @Injectable()
 export class VitriService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createVitriDto: CreateVitriDto) {
     try {
@@ -58,7 +58,7 @@ export class VitriService {
 
       /**
        * 2. Xử lý logic Keyword (Tìm kiếm theo tên vị trí hoặc tỉnh thành)
-       * Bạn có thể kết hợp filters từ JSON và keyword từ ô tìm kiếm
+       * Có thể kết hợp filters từ JSON và keyword từ ô tìm kiếm
        */
       const whereCondition = {
         ...filters, // Các filters từ JSON
@@ -109,19 +109,6 @@ export class VitriService {
         totalPage: totalPage, // SL trang
         items: data || [],
       };
-      // return {
-      //   message: 'Lấy danh sách vị trí thành công',
-      //   data: {
-      //     items: data,
-      //     meta: {
-      //       totalItem,
-      //       itemCount: data.length,
-      //       pageSize: pageSize,
-      //       totalPages: totalPage,
-      //       currentPage: queryDto.page || 1,
-      //     }
-      //   }
-      // };
     } catch (error) {
       console.error('Lỗi khi lấy danh sách vị trí:', error);
       throw new InternalServerErrorException('Không thể lấy danh sách vị trí');
@@ -130,7 +117,7 @@ export class VitriService {
 
   async findOne(id: number) {
     // console.log(id);
-    const vitri = await this.prisma.vitri.findUnique({
+    const data = await this.prisma.vitri.findUnique({
       where: { id: id },
       select: {
         id: true,
@@ -143,7 +130,7 @@ export class VitriService {
 
     return {
       message: `Lấy vị trí #${id} thành công`,
-      data: vitri,
+      data: data,
     };
   }
 
@@ -170,6 +157,37 @@ export class VitriService {
       throw new InternalServerErrorException(
         'Lỗi hệ thống khi cập nhật vị trí',
       );
+    }
+  }
+
+  async uploadHinh(id: number, filename: string) {
+    try {
+      // 1. Kiểm tra vị trí có tồn tại không
+      const vitri = await this.prisma.vitri.findUnique({ where: { id } });
+      if (!vitri) throw new NotFoundException('Vị trí không tồn tại');
+
+      // 2. Nếu vị trí đã có ảnh cũ, thực hiện xóa file cũ đi
+      if (vitri.hinh_anh) {
+        const oldPath = join(process.cwd(), 'uploads/vitri', vitri.hinh_anh);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath); // Xóa file
+        }
+      }
+
+      // 3. Cập nhật tên file vào DB
+      const updatedVitri = await this.prisma.vitri.update({
+        where: { id },
+        data: { hinh_anh: filename },
+      });
+
+      // 4. Response cho Front End
+      return {
+        message: 'Upload hình ảnh thành công',
+        data: updatedVitri,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException('Lỗi khi lưu ảnh vào database');
     }
   }
 
@@ -216,37 +234,6 @@ export class VitriService {
       throw new InternalServerErrorException(
         'Lỗi hệ thống khi thực hiện xóa vị trí.',
       );
-    }
-  }
-
-  async uploadHinh(id: number, filename: string) {
-    try {
-      // 1. Kiểm tra vị trí có tồn tại không
-      const vitri = await this.prisma.vitri.findUnique({ where: { id } });
-      if (!vitri) throw new NotFoundException('Vị trí không tồn tại');
-
-      // 2. Nếu vị trí đã có ảnh cũ, thực hiện xóa file cũ đi
-      if (vitri.hinh_anh) {
-        const oldPath = join(process.cwd(), 'uploads/vitri', vitri.hinh_anh);
-        if (fs.existsSync(oldPath)) {
-          fs.unlinkSync(oldPath); // Xóa file
-        }
-      }
-
-      // 3. Cập nhật tên file vào DB
-      const updatedVitri = await this.prisma.vitri.update({
-        where: { id },
-        data: { hinh_anh: filename },
-      });
-
-      // 4. Response cho Front End
-      return {
-        message: 'Upload ảnh thành công',
-        data: updatedVitri,
-      };
-    } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Lỗi khi lưu ảnh vào database');
     }
   }
 }
