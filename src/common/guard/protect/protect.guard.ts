@@ -1,6 +1,7 @@
 import {
   ExecutionContext,
   ForbiddenException,
+  HttpException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -52,8 +53,10 @@ export class ProtectGuard extends AuthGuard('protect') {
         // 401 để cho FE logout người dùng, vì token đang không hợp lệ
         throw new UnauthorizedException(info.message);
       }
-      throw err || new UnauthorizedException();
+
+      throw new UnauthorizedException('Unauthorized (Chưa xác thực)');
     }
+
     return user;
   }
 }

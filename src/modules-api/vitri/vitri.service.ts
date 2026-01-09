@@ -196,10 +196,15 @@ export class VitriService {
       // 1. Kiểm tra vị trí có tồn tại trong db & đếm SL phòng liên quan (vị trí đã phát sinh phòng)
       const vitriExists = await this.prisma.vitri.findUnique({
         where: { id },
-        include: {
+        select: {
+          id: true,
           // Đếm số lượng bản ghi ở table phong có ma_vi_tri = id
-          _count: { select: { phong: true } },
-        },
+          _count: { select: { phong: true } }
+        }
+        // include: {
+        //   // Đếm số lượng bản ghi ở table phong có ma_vi_tri = id
+        //   _count: { select: { phong: true } },
+        // },
       });
       // 2. Nếu không tồn tại vị trí
       if (!vitriExists) {

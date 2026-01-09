@@ -10,6 +10,7 @@ import { PrismaModule } from './modules-system/prisma/prisma.module';
 import { TokenModule } from './modules-system/token/token.module';
 import { ProtectStrategy } from './common/guard/protect/protect.strategy';
 import { CheckPermisionStrategy } from './common/guard/check-permission/check-permission.strategy';
+import { DatphongModule } from './modules-api/datphong/datphong.module';
 
 
 @Module({
@@ -21,6 +22,7 @@ import { CheckPermisionStrategy } from './common/guard/check-permission/check-pe
     TokenModule,
     VitriModule,
     PhongModule,
+    DatphongModule,
   ],
   controllers: [AppController],
 

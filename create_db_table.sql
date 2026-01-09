@@ -23,7 +23,6 @@ CREATE TABLE Phong (
     mo_ta TEXT,
     gia_tien INT NOT NULL,
     may_giat BOOLEAN DEFAULT FALSE,
-    ban_la BOOLEAN DEFAULT FALSE,
     tivi BOOLEAN DEFAULT FALSE,
     dieu_hoa BOOLEAN DEFAULT FALSE,
     wifi BOOLEAN DEFAULT FALSE,

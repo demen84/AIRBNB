@@ -38,7 +38,7 @@ import { PublicDecorator } from 'src/common/decorators/public.decorator';
 @ApiTags('Quản Lý Phòng')
 @Controller('phong')
 export class PhongController {
-  constructor(private readonly phongService: PhongService) {}
+  constructor(private readonly phongService: PhongService) { }
 
   // Chỉ admin mới có quyền create_new/update/delete phòng
   @Post()
@@ -90,7 +90,10 @@ export class PhongController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Xóa phòng' })
+  @ApiBearerAuth() // Bật ổ khóa
+  @Roles('admin') // Quy định chỉ admin mới có quyền
+  @UseGuards(ProtectGuard, RolesGuard)
+  @ApiOperation({ summary: 'Xóa phòng (chỉ quyền admin)' })
   @ApiResponse({ status: 200, description: 'Xóa phòng thành công' })
   remove(@Param('id') id: string) {
     return this.phongService.remove(+id);

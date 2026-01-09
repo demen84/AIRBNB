@@ -16,7 +16,7 @@ import { PaginationQueryDto } from './dto/query.dto';
 
 @Injectable()
 export class PhongService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(createPhongDto: CreatePhongDto) {
     try {
@@ -93,9 +93,8 @@ export class PhongService {
       };
 
       const dataPromise = this.prisma.phong.findMany({
-        // skip qua index bao nhiêu
         where: whereCondition,
-        skip: skip,
+        skip: skip, // skip qua index bao nhiêu
         take: pageSize,
         // Lấy tất cả fields nên không cần select: {id: true, ....}
         orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
@@ -179,8 +178,55 @@ export class PhongService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} phong`;
+  async remove(id: number) {
+    try {
+      // 1. Kiểm tra phòng có tồn tại trong db & đếm SL phòng liên quan (phòng đã phát sinh bảng đặt phòng)
+      const phongExists = await this.prisma.phong.findUnique({
+        where: { id },
+        select: { // => nhẹ hơn include
+          id: true,
+          // Đếm số lượng bản ghi ở table datphong có ma_phong = id
+          _count: { select: { datphong: true } }
+        },
+        // include: {
+        //   // Đếm số lượng bản ghi ở table datphong có ma_phong = id
+        //   _count: { select: { datphong: true } },
+        // },
+      });
+      // 2. Nếu không tồn tại phòng
+      if (!phongExists) {
+        throw new NotFoundException(`Không tồn tại phòng có id=${id}`);
+      }
+
+      // 3. KIỂM TRA RÀNG BUỘC: Nếu số lượng phòng > 0 thì không cho xóa
+      if (phongExists._count.datphong > 0) {
+        throw new BadRequestException(
+          `Phòng #${id} đã được đặt nên không thể xóa.`,
+        );
+      }
+
+      // 4. Nếu phòng chưa phát sinh trong đặt phòng, tiến hành xóa
+      await this.prisma.phong.delete({
+        where: { id },
+      });
+
+      return {
+        message: 'Xóa phòng thành công.',
+      };
+    } catch (error) {
+      // Nếu là lỗi chúng ta chủ động ném ra (404, 400) thì ném tiếp cho Filter xử lý
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+
+      console.error('Lỗi khi xóa phòng:', error);
+      throw new InternalServerErrorException(
+        'Lỗi hệ thống khi thực hiện xóa phòng.',
+      );
+    }
   }
 
   async uploadHinh(id: number, filename: string) {

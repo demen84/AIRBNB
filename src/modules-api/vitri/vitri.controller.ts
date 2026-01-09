@@ -151,7 +151,7 @@ export class VitriController {
     status: 400,
     description: 'Vị trí đang có phòng, không thể xóa',
   })
-  remove(@Param('id') id: string) {
-    return this.vitriService.remove(+id);
+  async remove(@Param('id') id: string) {
+    return await this.vitriService.remove(+id);
   }
 }
