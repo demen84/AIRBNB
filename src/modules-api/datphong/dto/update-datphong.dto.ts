@@ -3,7 +3,6 @@ import {
     IsInt,
     Min,
     IsOptional,
-    IsNotEmpty,
     Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';

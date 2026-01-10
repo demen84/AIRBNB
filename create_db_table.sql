@@ -85,3 +85,15 @@ CREATE TABLE BinhLuan (
     FOREIGN KEY (ma_phong) REFERENCES Phong(id) ON DELETE CASCADE,
     FOREIGN KEY (ma_nguoi_binh_luan) REFERENCES NguoiDung(id) ON DELETE CASCADE
 );
+
+-- 1. Thêm cột tong_tien vào sau cột so_luong_khach
+-- Tôi dùng kiểu dữ liệu INT, nếu bạn dùng tiền USD có thể đổi thành DECIMAL(10,2)
+ALTER TABLE datphong 
+ADD COLUMN tong_tien DECIMAL(10, 2) NULL AFTER so_luong_khach;
+
+-- 2. Cập nhật Enum để thêm 2 trạng thái: checked_in và completed
+-- Lưu ý: Phải liệt kê lại toàn bộ các giá trị cũ (pending, confirmed, cancelled) 
+-- cộng thêm các giá trị mới.
+ALTER TABLE datphong 
+MODIFY COLUMN trang_thai ENUM('pending', 'confirmed', 'checked_in', 'completed', 'cancelled') 
+DEFAULT 'pending';

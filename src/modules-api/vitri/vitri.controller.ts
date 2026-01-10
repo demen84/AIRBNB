@@ -28,10 +28,8 @@ import { PublicDecorator } from 'src/common/decorators/public.decorator';
 import { PaginationQueryDto } from '../phong/dto/query.dto';
 import { SkipPermission } from 'src/common/decorators/check-permission.decorator';
 import { Roles } from 'src/common/decorators/roles.decorator';
-import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/common/guard/protect/roles.guard';
 import { ProtectGuard } from 'src/common/guard/protect/protect.guard';
-
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';

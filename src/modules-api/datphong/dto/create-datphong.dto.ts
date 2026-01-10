@@ -28,7 +28,5 @@ export class CreateDatphongDto {
     so_luong_khach: number;
 
     // ma_nguoi_dat → lấy từ JWT / user đăng nhập
-
     // trang_thai → mặc định pending
-
 }
