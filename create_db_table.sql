@@ -77,8 +77,7 @@ CREATE TABLE BinhLuan (
     id INT AUTO_INCREMENT PRIMARY KEY,
     ma_phong INT NOT NULL,  -- Đã sửa từ ma_cong_viec
     ma_nguoi_binh_luan INT NOT NULL,
-    ngay_binh_luan DATE NOT NULL,
-    noi_dung VARCHAR(255) NOT NULL,
+    noi_dung TEXT NOT NULL,
     sao_binh_luan INT NOT NULL CHECK (sao_binh_luan BETWEEN 1 AND 5),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -97,3 +96,18 @@ ADD COLUMN tong_tien DECIMAL(10, 2) NULL AFTER so_luong_khach;
 ALTER TABLE datphong 
 MODIFY COLUMN trang_thai ENUM('pending', 'confirmed', 'checked_in', 'completed', 'cancelled') 
 DEFAULT 'pending';
+
+
+-- 1. Thay đổi kiểu dữ liệu cột noi_dung thành TEXT
+ALTER TABLE binhluan 
+MODIFY COLUMN noi_dung TEXT NOT NULL;
+
+-- 2. Xóa cột ngay_binh_luan dư thừa
+ALTER TABLE binhluan 
+DROP COLUMN ngay_binh_luan;
+
+-- 3. Thêm ràng buộc Check cho số sao (Chỉ hoạt động trên MySQL 8.0.16+)
+-- Nếu bạn dùng phiên bản cũ hơn, lệnh này sẽ không chạy, nhưng cũng không sao 
+-- vì chúng ta sẽ chặn bằng code NestJS ở DTO vào ngày mai.
+ALTER TABLE binhluan 
+ADD CONSTRAINT check_sao_rating CHECK (sao_binh_luan >= 1 AND sao_binh_luan <= 5);

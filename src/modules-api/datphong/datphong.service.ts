@@ -297,4 +297,203 @@ export class DatphongService {
       data: updatedBooking,
     };
   }
+
+  // XỬ LÝ THỐNG KÊ DOANH THU THEO NĂM
+  async getRevenueByYear(year: number) {
+    // 1. Lấy dữ liệu từ DB (Chỉ lấy các đơn đã hoàn thành trong năm được chọn)
+    // Note: nếu data có hàng trăm nghìn, hàng triệu rows thì cách này rất tốn RAM, CPU
+    const bookings = await this.prisma.datphong.findMany({
+      where: {
+        trang_thai: datphong_trang_thai.completed,
+        ngay_di: {
+          gte: new Date(`${year}-01-01T00:00:00.000Z`),
+          lte: new Date(`${year}-12-31T23:59:59.999Z`),
+        },
+      },
+      select: {
+        tong_tien: true,
+        ngay_di: true,
+      },
+    });
+
+    // 2. Khởi tạo mảng 12 tháng với doanh thu bằng 0
+    // Business rule: Luôn trả về đủ 12 tháng để Front-end vẽ biểu đồ
+    const monthlyRevenue = Array.from({ length: 12 }, (_, i) => ({
+      thang: i + 1,
+      doanh_thu: 0,
+      so_luong_don: 0,
+    }));
+
+    // 3. Duyệt qua danh sách đơn hàng để cộng dồn vào từng tháng tương ứng
+    bookings.forEach((booking) => {
+      const month = new Date(booking.ngay_di).getMonth(); // getMonth() trả về 0-->11
+
+      // Chuyển Decimal (Prisma) sang Number để tính toán
+      const amount = booking.tong_tien ? Number(booking.tong_tien) : 0;
+
+      monthlyRevenue[month].doanh_thu += amount;
+      monthlyRevenue[month].so_luong_don += 1;
+    });
+
+    // 4. Tính tổng doanh thu cả năm
+    const tong_doanh_thu_nam = monthlyRevenue.reduce(
+      (sum, item) => sum + item.doanh_thu,
+      0,
+    );
+
+    return {
+      message: 'Thống kê doanh thu cả năm theo từng tháng',
+      nam: year,
+      tong_doanh_thu_nam,
+      chi_tiet_thang: monthlyRevenue,
+    };
+  }
+
+  // Cách 1: SỬ DỤNG GROUP BY CỦA PRISMA (tối ưu RAM & CPU)
+  // Nếu dùng db khác (Mongo, PostgreSQL, ...) vì Prisma sẽ tự điều chỉnh câu lệnh SQL tương ứng
+  async getRevenueByYearGroupBy(year: number) {
+    // 1. Database tự tính tổng tiền và đếm số đơn theo từng ngày
+    const stats = await this.prisma.datphong.groupBy({
+      by: ['ngay_di'],
+      _sum: { tong_tien: true },
+      _count: { id: true },
+      where: {
+        trang_thai: datphong_trang_thai.completed,
+        ngay_di: {
+          gte: new Date(`${year}-01-01T00:00:00.000Z`),
+          lte: new Date(`${year}-12-31T23:59:59.999Z`),
+        },
+      },
+    });
+
+    // 2. Khởi tạo mảng 12 tháng
+    const monthlyRevenue = Array.from({ length: 12 }, (_, i) => ({
+      thang: i + 1,
+      doanh_thu: 0,
+      so_luong_don: 0,
+    }));
+
+    // 3. Gom dữ liệu từ các ngày vào các tháng tương ứng
+    stats.forEach((item) => {
+      const month = new Date(item.ngay_di).getMonth(); // 0-->11
+      const amount = item._sum.tong_tien ? Number(item._sum.tong_tien) : 0;
+
+      monthlyRevenue[month].doanh_thu += amount;
+      monthlyRevenue[month].so_luong_don += item._count.id;
+    });
+
+    const tong_doanh_thu_nam = monthlyRevenue.reduce(
+      (sum, item) => sum + item.doanh_thu,
+      0,
+    );
+
+    return {
+      message: 'Thống kê bằng Prisma GroupBy (Tối ưu RAM)',
+      nam: year,
+      tong_doanh_thu_nam,
+      chi_tiet_thang: monthlyRevenue,
+    };
+  }
+
+  // SỬ DỤNG SQL TRỰC TIẾP (tối ưu chỉ với MySQL)
+  // Sẽ gặp lỗi cú pháp nếu dùng db khác (Mongo, PortgreSQL, ...)
+  async getRevenueByYearRaw(year: number) {
+    // 1. Chạy câu lệnh SQL thuần
+    // Prisma sẽ tự động map các biến ${year} để chống SQL Injection
+    const result = await this.prisma.$queryRaw<any[]>`
+      SELECT 
+        MONTH(ngay_di) as thang, 
+        SUM(tong_tien) as doanh_thu, 
+        COUNT(id) as so_luong_don
+      FROM datphong
+      WHERE YEAR(ngay_di) = ${year} 
+        AND trang_thai = ${datphong_trang_thai.completed}
+      GROUP BY MONTH(ngay_di)
+      ORDER BY thang ASC
+    `;
+
+    // 2. Chuẩn hóa lại data (vì SQL chỉ trả về những tháng có data)
+    const fullYear = Array.from({ length: 12 }, (_, i) => {
+      const monthIndex = i + 1;
+      // Tìm trong kết quả SQL xem có tháng này không
+      const found = result.find((q) => Number(q.thang) === monthIndex);
+
+      return {
+        thang: monthIndex,
+        // ! Lưu ý quan trọng: Khi dùng Raw SQL, kết quả trả về thường là kiểu BigInt hoặc string. Vì vậy nên bọc Number(...) để đảm bảo tính toán chính xác trên Server.
+        doanh_thu: found ? Number(found.doanh_thu) : 0,
+        so_luong_don: found ? Number(found.so_luong_don) : 0,
+      };
+    });
+
+    const tong_doanh_thu_nam = fullYear.reduce(
+      (sum, item) => sum + item.doanh_thu,
+      0,
+    );
+
+    return {
+      message: 'Thống kê doanh thu bằng Raw SQL',
+      nam: year,
+      tong_doanh_thu_nam,
+      chi_tiet_thang: fullYear,
+    };
+  }
+
+  // THỐNG KÊ TOP 5 PHÒNG ĐƯỢC ĐẶT NHIỀU NHẤT
+  async getTopRooms() {
+    // 1. Group by ma_phong để đếm số lượt đặt (booking count)
+    const roomStats = await this.prisma.datphong.groupBy({
+      where: {
+        trang_thai: datphong_trang_thai.completed,
+        // ngay_den: { gte: firstDayOfMonth }
+      },
+      by: ['ma_phong'],
+      _count: {
+        id: true,
+      },
+      orderBy: {
+        _count: {
+          id: 'desc', // Sắp xếp từ nhiều đến ít
+        },
+      },
+      take: 5, // Chỉ lấy Top 5
+    });
+
+    if (roomStats.length === 0) {
+      return { message: 'Chưa có dữ liệu đặt phòng', data: [] };
+    }
+
+    // 2. Lấy danh sách ID phòng từ kết quả group để query chi tiết
+    const topRoomIds = roomStats.map((item) => item.ma_phong);
+
+    // 3. Lấy thông tin chi tiết của các phòng này
+    const roomsDetail = await this.prisma.phong.findMany({
+      where: {
+        id: { in: topRoomIds },
+      },
+      select: {
+        id: true,
+        ten_phong: true,
+        hinh_anh: true,
+        gia_tien: true,
+      },
+    });
+
+    // 4. Kết hợp dữ liệu lượt đặt vào thông tin phòng (vì findMany không đảm bảo thứ tự như groupBy)
+    const result = roomStats
+      .map((stat) => {
+        const detail = roomsDetail.find((r) => r.id === stat.ma_phong);
+        if (!detail) return null; // Loại bỏ trường hợp không tìm thấy (nếu có)
+        return {
+          ...detail,
+          luot_dat: stat._count.id,
+        };
+      })
+      .filter((item) => item !== null); // Lọc bỏ các giá trị null
+
+    return {
+      message: 'Top 5 phòng được đặt nhiều nhất',
+      data: result,
+    };
+  }
 }

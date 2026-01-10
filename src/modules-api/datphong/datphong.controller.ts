@@ -128,4 +128,24 @@ export class DatphongController {
   completeBooking(@Param('id', ParseIntPipe) id: number) {
     return this.datphongService.completeBooking(id);
   }
+
+  // THỐNG KÊ DOANH THU THEO NĂM/THÁNG
+  @Get('thong-ke-doanh-thu/:year')
+  @ApiBearerAuth()
+  @Roles('admin')
+  @ApiOperation({ summary: 'Thống kê doanh thu theo 12 tháng trong năm' })
+  getRevenueByYear(@Param('year', ParseIntPipe) year: number) {
+    // return this.datphongService.getRevenueByYear(year);
+    // return this.datphongService.getRevenueByYearGroupBy(year);
+    return this.datphongService.getRevenueByYearRaw(year);
+  }
+
+  // THỐNG KÊ TOP 5 PHÒNG ĐƯỢC ĐẶT NHIỀU NHẤT
+  @Get('top-phong')
+  @ApiBearerAuth()
+  @Roles('admin')
+  @ApiOperation({ summary: 'Thống kê Top 5 phòng được đặt nhiều nhất' })
+  getTopRooms() {
+    return this.datphongService.getTopRooms();
+  }
 }
