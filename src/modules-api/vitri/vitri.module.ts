@@ -1,3 +1,4 @@
+// nest g resource modules-api/vitri --no-spec
 import { Module } from '@nestjs/common';
 import { VitriService } from './vitri.service';
 import { VitriController } from './vitri.controller';

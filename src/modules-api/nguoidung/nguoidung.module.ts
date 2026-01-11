@@ -1,3 +1,4 @@
+// nest g resource modules-api/nguoidung --no-spec
 import { Module } from '@nestjs/common';
 import { NguoidungService } from './nguoidung.service';
 import { NguoidungController } from './nguoidung.controller';

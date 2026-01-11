@@ -1,3 +1,4 @@
+// // nest g resource modules-api/phong --no-spec
 import { Module } from '@nestjs/common';
 import { PhongService } from './phong.service';
 import { PhongController } from './phong.controller';

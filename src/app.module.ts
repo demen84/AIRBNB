@@ -11,6 +11,7 @@ import { TokenModule } from './modules-system/token/token.module';
 import { ProtectStrategy } from './common/guard/protect/protect.strategy';
 import { CheckPermisionStrategy } from './common/guard/check-permission/check-permission.strategy';
 import { DatphongModule } from './modules-api/datphong/datphong.module';
+import { BinhluanModule } from './modules-api/binhluan/binhluan.module';
 
 
 @Module({
@@ -23,6 +24,7 @@ import { DatphongModule } from './modules-api/datphong/datphong.module';
     VitriModule,
     PhongModule,
     DatphongModule,
+    BinhluanModule,
   ],
   controllers: [AppController],
 
