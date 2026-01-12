@@ -21,6 +21,7 @@ import { UpdateVitriDto } from './dto/update-vitri.dto';
 import {
   ApiBearerAuth,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -38,7 +39,7 @@ import { ApiConsumes, ApiBody } from '@nestjs/swagger';
 @ApiTags('Vị Trí')
 @Controller('vitri')
 export class VitriController {
-  constructor(private readonly vitriService: VitriService) {}
+  constructor(private readonly vitriService: VitriService) { }
 
   // TẠO VỊ TRÍ MỚI
   // Chỉ admin mới có quyền tạo vị trí mới
@@ -69,6 +70,12 @@ export class VitriController {
   @SkipPermission()
   @ApiOperation({ summary: 'Lấy 1 vị trí cụ thể theo mã vị trí' })
   @ApiResponse({ status: 200, description: 'Trả về thông tin vị trí' })
+  @ApiParam({
+    name: 'id',
+    description: 'Mã vị trí',
+    type: Number,
+    example: 1,
+  })
   findOne(@Param('id') id: string) {
     return this.vitriService.findOne(+id);
   }
@@ -81,6 +88,12 @@ export class VitriController {
   @UseGuards(ProtectGuard, RolesGuard)
   @ApiOperation({ summary: 'Cập  thông tin vị trí (chỉ quyền admin)' })
   @ApiResponse({ status: 200, description: 'Cập nhật vị trí thành công' })
+  @ApiParam({
+    name: 'id',
+    description: 'Mã vị trí',
+    type: Number,
+    example: 1,
+  })
   async update(
     @Param('id') id: string,
     @Body() updateVitriDto: UpdateVitriDto,
@@ -126,6 +139,12 @@ export class VitriController {
     }),
   )
   @ApiOperation({ summary: 'Upload hình ảnh cho vị trí (chỉ admin)' })
+  @ApiParam({
+    name: 'id',
+    description: 'Mã vị trí',
+    type: Number,
+    example: 1,
+  })
   async uploadHinh(
     @Param('id', ParseIntPipe) id: number,
     @UploadedFile() file: Express.Multer.File,
@@ -149,7 +168,13 @@ export class VitriController {
     status: 400,
     description: 'Vị trí đang có phòng, không thể xóa',
   })
-  async remove(@Param('id') id: string) {
+  @ApiParam({
+    name: 'id',
+    description: 'Mã vị trí',
+    type: Number,
+    example: 1,
+  })
+  async remove(@Param('id') id: number) {
     return await this.vitriService.remove(+id);
   }
 }

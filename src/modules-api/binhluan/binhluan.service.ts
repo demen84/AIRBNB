@@ -15,7 +15,7 @@ import { PaginationQueryDto } from '../phong/dto/query.dto';
 
 @Injectable()
 export class BinhluanService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   // TẠO BÌNH LUẬN & ĐÁNH GIÁ
   async create(createBinhluanDto: CreateBinhluanDto, currentUser: AuthUser) {
@@ -27,8 +27,8 @@ export class BinhluanService {
     });
     if (!checkPhong) throw new NotFoundException('Phòng không tồn tại');
 
-    // 2. LOGIC ANTI-FAKE REVIEW: Kiểm tra xem user đã ở phòng này chưa
-    // Lưu ý: Chỉ tính những đơn đã 'completed'
+    // 2. LOGIC ANTI-FAKE REVIEW (chống review ảo): Kiểm tra xem user đã ở phòng này chưa
+    // Lưu ý: Chỉ tính những booking có trạng thái 'completed'
     const hasStayed = await this.prisma.datphong.findFirst({
       where: {
         ma_phong,
@@ -39,7 +39,7 @@ export class BinhluanService {
 
     if (!hasStayed) {
       throw new ForbiddenException(
-        'Chống review ảo: Bạn cần hoàn tất chuyến đi (status: completed) tại phòng này để gửi đánh giá.',
+        'Chống review ảo: Bạn cần hoàn tất chuyến đi (trang_thai: completed) tại phòng này để gửi đánh giá.',
       );
     }
 
@@ -74,18 +74,39 @@ export class BinhluanService {
     };
   }
 
-  // LẤY DANH SÁCH BÌNH LUẬN
+  // LẤY DANH SÁCH BÌNH LUẬN theo phòng
   async findAllByRoom(ma_phong: number, queryDto: PaginationQueryDto) {
     try {
-      // 1. Lấy data phân trang
+      // 0. Lấy data phân trang
       const { page, pageSize, filters, skip } = buildQuery(queryDto);
+
+      // 1. Xác định logic sắp xếp (Mapping UI -> Prisma)
+      let sortCondition: any = { created_at: 'desc' }; // Mặc định là Newest
+
+      switch (queryDto.sortBy) {
+        case 'highest':
+          sortCondition = { sao_binh_luan: 'desc' };
+          break;
+        case 'lowest':
+          sortCondition = { sao_binh_luan: 'asc' };
+          break;
+        case 'newest':
+          sortCondition = { created_at: 'desc' };
+          break;
+        case 'relevant':
+          // Sắp xếp theo độ dài nội dung giảm dần (Relevant nhất)
+          // ! Lưu ý: Prisma ko hỗ trợ sort theo length trực tiếp, nên dùng sort theo sao cao nhất + mới nhất làm Relevant tạm thời
+          sortCondition = [{ sao_binh_luan: 'desc' }, { created_at: 'desc' }];
+          break;
+      }
 
       // 2. Xử lý logic keyword (tìm kiếm theo tên phòng & mô tả)
       const whereCondition = {
-        ma_phong: ma_phong,
+        ma_phong: ma_phong, // luôn lọc theo phòng
         ...filters, // các filters từ JSON
         ...(queryDto.keyword && {
-          OR: [{ noi_dung: { contains: queryDto.keyword } }],
+          // OR: [{ noi_dung: { contains: queryDto.keyword } }],
+          noi_dung: { contains: queryDto.keyword }
         }),
       };
 
@@ -93,38 +114,49 @@ export class BinhluanService {
         where: whereCondition,
         include: {
           nguoidung: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
+            select: { id: true, name: true, avatar: true, },
           },
         },
         skip: skip, // skip qua index bao nhiêu
         take: pageSize, // giới hạn số lượng bình luận lấy ra
-        // Lấy tất cả fields nên không cần select: {id: true, ....}
-        orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
+        // orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
+        // Ép kiểu mảng nếu sortCondition là mảng, ngược lại để object
+        orderBy: Array.isArray(sortCondition) ? sortCondition : [sortCondition, { id: 'desc' }],
       });
 
       const totalItemPromise = this.prisma.binhluan.count({
         where: whereCondition,
       });
 
-      // 3. Truy vấn song song
-      const [data, totalItem] = await Promise.all([
-        dataPromise,
-        totalItemPromise,
-      ]);
-
-      // Tính tổng số trang
-      const totalPage = Math.ceil(totalItem / pageSize);
-
-      // 4. Thống kê số lượng từng mức sao
-      const ratingStats = await this.prisma.binhluan.groupBy({
+      // 3. Thống kê số lượng từng mức sao
+      const ratingStatsPromise = this.prisma.binhluan.groupBy({
         by: ['sao_binh_luan'],
         where: { ma_phong },
         _count: { id: true },
       });
+
+      // 4. Truy vấn song song
+      const [data, totalItem, rating] = await Promise.all([
+        dataPromise,
+        totalItemPromise,
+        ratingStatsPromise
+      ]);
+
+      // --- Sắp xếp sao giảm dần => Giúp tiện cho Front End ---
+      const formattedStats = [5, 4, 3, 2, 1].map((star) => {
+        const found = rating.find((s) => s.sao_binh_luan === star);
+        return {
+          sao: star,
+          so_luong: found ? found._count.id : 0,
+        };
+      });
+
+      // Tính tổng số trang
+      const totalPage = Math.ceil(totalItem / pageSize);
+
+      // Tính điểm trung bình chính xác từ ratingStats (vd: 4.2; 3.8)
+      const totalStars = formattedStats.reduce((sum, item) => sum + (item.sao * item.so_luong), 0);
+      const averageRating = totalItem > 0 ? (totalStars / totalItem).toFixed(1) : 0;
 
       // 5. Trả về kết quả phân trang
       return {
@@ -133,7 +165,8 @@ export class BinhluanService {
         pageSize: pageSize,
         totalItem: totalItem,
         totalPage: totalPage,
-        ratingStats: ratingStats,
+        averageRating: Number(averageRating),
+        ratingStats: formattedStats,
         items: data || [],
       };
     } catch (error) {

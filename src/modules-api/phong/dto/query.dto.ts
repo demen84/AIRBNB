@@ -7,10 +7,12 @@ import {
   IsNumber,
   IsOptional,
   IsPositive,
+  IsString,
   Min,
 } from 'class-validator';
 
 export class PaginationQueryDto {
+  // PAGE
   @ApiProperty({
     description: 'Số trang (bắt đầu từ 1)',
     example: 1,
@@ -25,6 +27,8 @@ export class PaginationQueryDto {
   @Min(1)
   page?: number = 1;
 
+
+  // PAGE SIZE
   @ApiProperty({
     description: 'Số lượng item mỗi trang',
     example: 5,
@@ -39,6 +43,7 @@ export class PaginationQueryDto {
   @Min(1)
   pageSize?: number = 5;
 
+  // KEYWORD
   @ApiProperty({
     description: 'Alias cho `pageSize` (hỗ trợ `limit` query param)',
     example: 5,
@@ -59,6 +64,7 @@ export class PaginationQueryDto {
   @IsOptional()
   keyword?: string;
 
+  // FILTER
   @IsOptional()
   @IsJSON({ message: 'Filters phải là chuỗi JSON hợp lệ' })
   @Transform(({ value }) => {
@@ -72,4 +78,14 @@ export class PaginationQueryDto {
     return value;
   })
   filters?: Record<string, any>; // ? : có thể truyền or không truyền
+
+  // Thêm field SORT BY
+  @ApiProperty({
+    required: false,
+    enum: ['relevant', 'newest', 'highest', 'lowest'],
+    description: 'Chế độ sắp xếp bình luận/đánh giá'
+  })
+  @IsOptional()
+  @IsString()
+  sortBy?: string;
 }

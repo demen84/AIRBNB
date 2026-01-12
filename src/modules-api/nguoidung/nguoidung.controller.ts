@@ -15,6 +15,7 @@ import { UpdateNguoidungDto } from './dto/update-nguoidung.dto';
 import {
   ApiBearerAuth,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -50,6 +51,12 @@ export class NguoidungController {
     description: 'Không có quyền cập nhật người dùng này',
   })
   @ApiResponse({ status: 404, description: 'Người dùng không tồn tại' })
+  @ApiParam({
+    name: 'id',
+    description: 'Mã người dùng',
+    type: Number,
+    example: 1,
+  })
   update(
     @Param('id') id: string,
     @Body() updateNguoidungDto: UpdateNguoidungDto,
@@ -74,6 +81,12 @@ export class NguoidungController {
   @ApiResponse({ status: 403, description: 'Chỉ admin mới có quyền khóa' })
   @ApiResponse({ status: 404, description: 'Người dùng không tồn tại' })
   @ApiResponse({ status: 400, description: 'Không thể tự khóa hoặc khóa admin khác' })
+  @ApiParam({
+    name: 'id',
+    description: 'Mã người dùng',
+    type: Number,
+    example: 1,
+  })
   banUser(@Param('id') id: string, @Req() req: Request) {
     const currentUser = req.user as any;
     return this.nguoidungService.banUser(+id, {

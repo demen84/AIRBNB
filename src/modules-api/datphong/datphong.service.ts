@@ -1,3 +1,11 @@
+/**
+ * Quản lý luồng BOOKING như sau:
+ * Pending/Confirmed (Admin xác nhận)
+ * Confirmed/Checked_in (Khách đến nhận phòng)
+ * Checked_in - Completed (Khách trả phòng - Kết thúc)
+ * Pending/Confirmed/Cancelled (Hủy đơn)
+ */
+
 import {
   BadRequestException,
   ForbiddenException,
@@ -12,11 +20,13 @@ import { datphong_trang_thai } from 'src/modules-system/prisma/generated/prisma/
 import { AuthUser } from 'src/common/interface/auth-user.interface';
 import { UpdateBookingStatusDto } from './dto/update-bookingstatus.dto';
 import { UpdateBookingByAdminDto } from './dto/update-booking-by-admin.dto';
+import { TOP_ROOM_BOOKED } from 'src/common/constant/app.constant';
 
 @Injectable()
 export class DatphongService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
+  // TẠO BOOKING
   async create(createDatphongDto: CreateDatphongDto, currentUser: AuthUser) {
     // 0. Lấy data từ dto
     const { ma_phong, ngay_den, ngay_di, so_luong_khach } = createDatphongDto;
@@ -88,12 +98,13 @@ export class DatphongService {
     };
   }
 
-  // UPDATE STATUS CỦA ĐẶT PHÒNG
+  // UPDATE BOOKING STATUS
   async updateStatus(
     id: number,
     updateBookingStatusDto: UpdateBookingStatusDto,
   ) {
     const { trang_thai } = updateBookingStatusDto;
+    // const bookingStatus = trang_thai.toLowerCase();
 
     // Kiểm tra đơn đặt phòng có tồn tại không
     const booking = await this.prisma.datphong.findUnique({ where: { id } });
@@ -110,7 +121,7 @@ export class DatphongService {
     };
   }
 
-  // ADMIN UPDATE STATUS
+  // ADMIN UPDATE STATUS (Admin có thể sửa toàn bộ thông tin booking)
   async adminUpdate(id: number, dto: UpdateBookingByAdminDto) {
     // const { ma_phong, ngay_den, ngay_di, so_luong_khach } = dto;
 
@@ -448,15 +459,13 @@ export class DatphongService {
         // ngay_den: { gte: firstDayOfMonth }
       },
       by: ['ma_phong'],
-      _count: {
-        id: true,
-      },
+      _count: { id: true },
       orderBy: {
         _count: {
           id: 'desc', // Sắp xếp từ nhiều đến ít
         },
       },
-      take: 5, // Chỉ lấy Top 5
+      take: TOP_ROOM_BOOKED, // Chỉ lấy Top 5
     });
 
     if (roomStats.length === 0) {
@@ -464,7 +473,7 @@ export class DatphongService {
     }
 
     // 2. Lấy danh sách ID phòng từ kết quả group để query chi tiết
-    const topRoomIds = roomStats.map((item) => item.ma_phong);
+    const topRoomIds = roomStats.map((room) => room.ma_phong);
 
     // 3. Lấy thông tin chi tiết của các phòng này
     const roomsDetail = await this.prisma.phong.findMany({
@@ -492,7 +501,7 @@ export class DatphongService {
       .filter((item) => item !== null); // Lọc bỏ các giá trị null
 
     return {
-      message: 'Top 5 phòng được đặt nhiều nhất',
+      message: `Top ${TOP_ROOM_BOOKED} phòng được đặt nhiều nhất`,
       data: result,
     };
   }

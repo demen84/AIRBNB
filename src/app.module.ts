@@ -18,13 +18,13 @@ import { BinhluanModule } from './modules-api/binhluan/binhluan.module';
   imports: [
     ConfigModule.forRoot(),
     AuthModule,
+    DatphongModule,
+    BinhluanModule,
     NguoidungModule,
     PrismaModule,
     TokenModule,
     VitriModule,
     PhongModule,
-    DatphongModule,
-    BinhluanModule,
   ],
   controllers: [AppController],
 

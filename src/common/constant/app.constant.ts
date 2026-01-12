@@ -21,6 +21,9 @@ export const DATABASE_USER = process.env.DATABASE_USER;
 export const DATABASE_NAME = process.env.DATABASE_NAME;
 export const DATABASE_PASSWORD = process.env.DATABASE_PASSWORD;
 
+// VARIABLES FOR REPORTS
+export const TOP_ROOM_BOOKED = Number(process.env.TOP_ROOM_BOOKED);
+
 //TTL: Time To Live
 export const ACCESS_TOKEN_TTL: TimeSpanText = (process.env.ACCESS_TOKEN_TTL ?? "600m") as TimeSpanText;
 export const REFRESH_TOKEN_TTL: TimeSpanText = (process.env.REFRESH_TOKEN_TTL ?? "5d") as TimeSpanText;

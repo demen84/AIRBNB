@@ -24,6 +24,7 @@ import {
   ApiBody,
   ApiConsumes,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -67,6 +68,12 @@ export class PhongController {
   @SkipPermission()
   @ApiOperation({ summary: 'Lấy thông tin phòng' })
   @ApiResponse({ status: 200, description: 'Lấy thông tin phòng thành công' })
+  @ApiParam({
+    name: 'id',
+    description: 'Mã phòng (id)',
+    type: Number,
+    example: 1,
+  })
   findOne(@Param('id') id: string) {
     return this.phongService.findOne(+id);
   }
@@ -82,6 +89,12 @@ export class PhongController {
     status: 200,
     description: 'Cập nhật thông tin phòng thành công',
   })
+  @ApiParam({
+    name: 'id',
+    description: 'Mã phòng (id)',
+    type: Number,
+    example: 1,
+  })
   async update(
     @Param('id') id: string,
     @Body() updatePhongDto: UpdatePhongDto,
@@ -95,6 +108,12 @@ export class PhongController {
   @UseGuards(ProtectGuard, RolesGuard)
   @ApiOperation({ summary: 'Xóa phòng (chỉ quyền admin)' })
   @ApiResponse({ status: 200, description: 'Xóa phòng thành công' })
+  @ApiParam({
+    name: 'id',
+    description: 'Mã phòng (id)',
+    type: Number,
+    example: 1,
+  })
   remove(@Param('id') id: string) {
     return this.phongService.remove(+id);
   }
@@ -137,6 +156,12 @@ export class PhongController {
     }),
   )
   @ApiOperation({ summary: 'Upload hình ảnh phòng (Chỉ quyền Admin)' })
+  @ApiParam({
+    name: 'id',
+    description: 'Mã phòng (id)',
+    type: Number,
+    example: 1,
+  })
   async uploadHinh(
     @Param('id', ParseIntPipe) id: number,
     @UploadedFile() file: Express.Multer.File,

@@ -1,3 +1,4 @@
+// nest g resource modules-api/binhluan --no-spec
 import {
   Controller,
   Post,
@@ -11,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { BinhluanService } from './binhluan.service';
 import { CreateBinhluanDto } from './dto/create-binhluan.dto';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { AuthUser } from 'src/common/interface/auth-user.interface';
 import { PaginationQueryDto } from '../phong/dto/query.dto';
@@ -22,7 +23,7 @@ import { Roles } from 'src/common/decorators/roles.decorator';
 @ApiTags('Bình luận & Đánh giá')
 @Controller('binhluan')
 export class BinhluanController {
-  constructor(private readonly binhluanService: BinhluanService) {}
+  constructor(private readonly binhluanService: BinhluanService) { }
 
   // TẠO BÌNH LUẬN & ĐÁNH GIÁ
   @Post()
@@ -39,13 +40,19 @@ export class BinhluanController {
     return this.binhluanService.create(createBinhluanDto, currentUser);
   }
 
-  // LẤY DANH SÁCH BÌNH LUẬN
+  // LẤY DANH SÁCH BÌNH LUẬN theo phòng
   @Get('phong/:id')
   @PublicDecorator()
   @SkipPermission()
   @ApiOperation({
     summary:
       'Lấy danh sách bình luận của một phòng cụ thể (có phân trang & tìm kiếm theo/lọc bình luận)',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Mã phòng',
+    type: Number,
+    example: 1,
   })
   findAllByRoom(
     @Param('id', ParseIntPipe) ma_phong: number,
@@ -58,6 +65,12 @@ export class BinhluanController {
   @Delete(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Xóa bình luận của chính mình' })
+  @ApiParam({
+    name: 'id',
+    description: 'Mã bình luận',
+    type: Number,
+    example: 1,
+  })
   remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
     return this.binhluanService.remove(id, user.id);
   }
