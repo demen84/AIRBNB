@@ -35,6 +35,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { PublicDecorator } from 'src/common/decorators/public.decorator';
+import { SearchRoomDto } from './dto/search-room.dto';
 
 @ApiTags('Quản Lý Phòng')
 @Controller('phong')
@@ -171,5 +172,16 @@ export class PhongController {
     }
     const fileName = file.filename;
     return this.phongService.uploadHinh(id, fileName);
+  }
+
+  // TÌM KIẾM PHÒNG TRỐNG
+  @Get()
+  @PublicDecorator()
+  @SkipPermission()
+  // @ApiBearerAuth() // Bật Lock symbol tại api lấy danh sách Phòng
+  @ApiOperation({ summary: 'Tìm kiếm phòng trống (có phân trang & tìm kiếm)' })
+  @ApiResponse({ status: 200, description: 'Trả về danh sách phòng còn trống' })
+  findAvailableRooms(@Query() searchRoomDto: SearchRoomDto) {
+    return this.phongService.findAvailableRooms(searchRoomDto);
   }
 }

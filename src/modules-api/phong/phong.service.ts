@@ -12,6 +12,7 @@ import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import * as fs from 'fs';
 import { join } from 'path';
 import { PaginationQueryDto } from './dto/query.dto';
+import { SearchRoomDto } from './dto/search-room.dto';
 // import { contains } from 'class-validator';
 
 @Injectable()
@@ -257,6 +258,89 @@ export class PhongService {
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException('Lỗi khi lưu ảnh vào database');
+    }
+  }
+
+
+  // TÌM KIẾM PHÒNG CÒN TRỐNG
+  async findAvailableRooms(searchRoomDto: SearchRoomDto) {
+    try {
+      // 1. Giải nén dữ liệu từ buildQuery (để lấy skip, pageSize và các filter cơ bản)
+      const { page, pageSize, filters, skip } = buildQuery(searchRoomDto);
+
+      // 2. Lấy các tham số tìm kiếm nâng cao từ queryDto
+      const { ma_vi_tri, so_khach, ngay_den, ngay_di } = searchRoomDto;
+
+      // 3. Xây dựng điều kiện lọc (Where Condition)
+      const whereCondition: any = {
+        ...filters, // Giữ lại các filter từ buildQuery (như keyword)
+      };
+
+      // Lọc theo vị trí nếu có
+      if (ma_vi_tri) {
+        whereCondition.ma_vi_tri = Number(ma_vi_tri);
+      }
+
+      // Lọc theo sức chứa (số khách)
+      if (so_khach) {
+        whereCondition.khach = { gte: Number(so_khach) };
+      }
+
+      // --- LOGIC QUAN TRỌNG: Tìm phòng trống theo ngày ---
+      if (ngay_den && ngay_di) {
+        const checkIn = new Date(ngay_den);
+        const checkOut = new Date(ngay_di);
+
+        // Loại bỏ những phòng có lịch đặt trùng
+        whereCondition.NOT = {
+          datphong: {
+            some: {
+              // Chỉ xét những booking không bị hủy
+              trang_thai: { not: 'cancelled' },
+              // Thuật toán Overlap: Đơn đặt trùng lịch nếu (Start1 < End2) AND (End1 > Start2)
+              AND: [
+                { ngay_den: { lt: checkOut } },
+                { ngay_di: { gt: checkIn } },
+              ],
+            },
+          },
+        };
+      }
+
+      // 4. Thực hiện truy vấn song song để tối ưu hiệu năng
+      const dataPromise = this.prisma.phong.findMany({
+        where: whereCondition,
+        include: {
+          vitri: true, // Lấy thông tin vị trí để hiển thị
+        },
+        skip: skip,
+        take: pageSize,
+        orderBy: { id: 'desc' },
+      });
+
+      const totalItemPromise = this.prisma.phong.count({
+        where: whereCondition,
+      });
+
+      const [data, totalItem] = await Promise.all([
+        dataPromise,
+        totalItemPromise,
+      ]);
+
+      // 5. Tính toán và trả về kết quả
+      const totalPage = Math.ceil(totalItem / pageSize);
+
+      return {
+        thongBao: 'Tìm kiếm danh sách phòng thành công',
+        page,
+        pageSize,
+        totalItem,
+        totalPage,
+        items: data || [],
+      };
+    } catch (error) {
+      console.error('Lỗi tìm kiếm phòng:', error);
+      throw new InternalServerErrorException('Không thể thực hiện tìm kiếm phòng');
     }
   }
 }

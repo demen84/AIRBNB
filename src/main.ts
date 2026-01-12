@@ -53,10 +53,11 @@ async function bootstrap() {
       // Nếu ko có 2 dòng code sau thì khi gọi api bên postman sẽ báo như sau:
       // "page must not be less than 1",
       // "page must be a number conforming to the specified constraints",
-      // bật chức năng chuyển kiểu data
-      transform: true,
+      transform: true, // bật chức năng chuyển kiểu data
       // tự suy ra kiểu data của biến
       transformOptions: { enableImplicitConversion: true },
+      whitelist: true, // âm thầm xóa các trường dư thừa (user cố tình gửi dư để hack)
+      forbidNonWhitelisted: true, // Sẽ báo lỗi 400, chặn luôn API, chứ ko âm thầm xóa các trường dư thừa.
     }),
   );
 

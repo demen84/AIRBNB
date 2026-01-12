@@ -13,3 +13,8 @@ Nếu không muốn chạy npx prisma generate thì:
 vào script trong file package.json
 sau này chỉ cần: git pull ==> npm i; không cần npx prisma generate
 
+
+// nest g resource modules-api/binhluan --no-spec
+
+Làm tiếp các báo cáo doanh thu theo: tháng/quý
+
