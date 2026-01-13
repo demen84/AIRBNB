@@ -1,4 +1,4 @@
-import { NestFactory, Reflector } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { PORT } from './common/constant/app.constant';
 import { ValidationPipe } from '@nestjs/common';
@@ -11,12 +11,17 @@ import { initSwagger } from './common/swagger/init.swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import * as fs from 'fs'; // Import thư viện File System (fs)
+import { PrismaClientExceptionFilter } from './common/filters/prisma-client-exception.filter';
 
 async function bootstrap() {
   // const app = await NestFactory.create(AppModule);
 
   // 2. Ép kiểu NestExpressApplication
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // --- KÍCH HOẠT PRISMA FILTER Ở TOÀN CỤC (GLOBAL) ---
+  const { httpAdapter } = app.get(HttpAdapterHost);
+  app.useGlobalFilters(new PrismaClientExceptionFilter(httpAdapter));
 
   // 1. Danh sách các thư mục cần khởi tạo
   const folders = [

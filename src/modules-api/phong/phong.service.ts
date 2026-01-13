@@ -156,78 +156,54 @@ export class PhongService {
   }
 
   async update(id: number, updatePhongDto: UpdatePhongDto) {
-    try {
-      // 1. Kiểm tra phòng có tồn tại không
-      const phong = await this.prisma.phong.findUnique({ where: { id } });
-      if (!phong)
-        throw new NotFoundException('Không tìm thấy phòng cần cập nhật');
+    // 1. Kiểm tra phòng có tồn tại không
+    const phong = await this.prisma.phong.findUnique({ where: { id } });
+    if (!phong)
+      throw new NotFoundException('Không tìm thấy phòng cần cập nhật');
 
-      // 2. Tiến hành cập nhật
-      const updatedData = await this.prisma.phong.update({
-        where: { id },
-        data: updatePhongDto,
-      });
+    // 2. Tiến hành cập nhật
+    const updatedData = await this.prisma.phong.update({
+      where: { id },
+      data: updatePhongDto,
+    });
 
-      return {
-        message: `Cập nhật thông tin phòng #${id} thành công`,
-        data: updatedData,
-      };
-    } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      console.error('Lỗi Update Prisma:', error);
-      throw new InternalServerErrorException('Lỗi hệ thống khi cập nhật phòng');
-    }
+    return {
+      message: `Cập nhật thông tin phòng #${id} thành công`,
+      data: updatedData,
+    };
+
   }
 
   async remove(id: number) {
-    try {
-      // 1. Kiểm tra phòng có tồn tại trong db & đếm SL phòng liên quan (phòng đã phát sinh bảng đặt phòng)
-      const phongExists = await this.prisma.phong.findUnique({
-        where: { id },
-        select: { // => nhẹ hơn include
-          id: true,
-          // Đếm số lượng bản ghi ở table datphong có ma_phong = id
-          _count: { select: { datphong: true } }
-        },
-        // include: {
-        //   // Đếm số lượng bản ghi ở table datphong có ma_phong = id
-        //   _count: { select: { datphong: true } },
-        // },
-      });
-      // 2. Nếu không tồn tại phòng
-      if (!phongExists) {
-        throw new NotFoundException(`Không tồn tại phòng có id=${id}`);
-      }
+    // 1. Kiểm tra phòng có tồn tại trong db & đếm SL phòng liên quan (phòng đã phát sinh bảng đặt phòng)
+    const phongExists = await this.prisma.phong.findUnique({
+      where: { id },
+      select: { // => nhẹ hơn include
+        id: true,
+        // Đếm số lượng bản ghi ở table datphong có ma_phong = id
+        _count: { select: { datphong: true } }
+      },
+    });
+    // 2. Nếu không tồn tại phòng
+    if (!phongExists) {
+      throw new NotFoundException(`Không tồn tại phòng có id=${id}`);
+    }
 
-      // 3. KIỂM TRA RÀNG BUỘC: Nếu số lượng phòng > 0 thì không cho xóa
-      if (phongExists._count.datphong > 0) {
-        throw new BadRequestException(
-          `Phòng #${id} đã được đặt nên không thể xóa.`,
-        );
-      }
-
-      // 4. Nếu phòng chưa phát sinh trong đặt phòng, tiến hành xóa
-      await this.prisma.phong.delete({
-        where: { id },
-      });
-
-      return {
-        message: 'Xóa phòng thành công.',
-      };
-    } catch (error) {
-      // Nếu là lỗi chúng ta chủ động ném ra (404, 400) thì ném tiếp cho Filter xử lý
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
-
-      console.error('Lỗi khi xóa phòng:', error);
-      throw new InternalServerErrorException(
-        'Lỗi hệ thống khi thực hiện xóa phòng.',
+    // 3. KIỂM TRA RÀNG BUỘC: Nếu số lượng phòng > 0 thì không cho xóa
+    if (phongExists._count.datphong > 0) {
+      throw new BadRequestException(
+        `Phòng #${id} đã được đặt nên không thể xóa.`,
       );
     }
+
+    // 4. Nếu phòng chưa phát sinh trong đặt phòng, tiến hành xóa
+    await this.prisma.phong.delete({
+      where: { id },
+    });
+
+    return {
+      message: 'Xóa phòng thành công.',
+    };
   }
 
   async uploadHinh(id: number, filename: string) {

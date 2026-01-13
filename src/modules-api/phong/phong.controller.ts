@@ -178,9 +178,14 @@ export class PhongController {
   @Get()
   @PublicDecorator()
   @SkipPermission()
-  // @ApiBearerAuth() // Bật Lock symbol tại api lấy danh sách Phòng
-  @ApiOperation({ summary: 'Tìm kiếm phòng trống (có phân trang & tìm kiếm)' })
-  @ApiResponse({ status: 200, description: 'Trả về danh sách phòng còn trống' })
+  @ApiOperation(
+    { summary: 'Tìm kiếm phòng trống (có phân trang & tìm kiếm)' })
+  @ApiResponse(
+    {
+      status: 200,
+      description: 'Trả về danh sách phòng còn trống'
+    }
+  )
   findAvailableRooms(@Query() searchRoomDto: SearchRoomDto) {
     return this.phongService.findAvailableRooms(searchRoomDto);
   }

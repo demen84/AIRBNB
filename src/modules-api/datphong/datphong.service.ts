@@ -13,7 +13,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateDatphongDto } from './dto/create-datphong.dto';
-import { UpdateDatphongDto } from './dto/update-datphong.dto';
+// import { UpdateDatphongDto } from './dto/update-datphong.dto';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 // import { TokenService } from 'src/modules-system/token/token.service';
 import { datphong_trang_thai } from 'src/modules-system/prisma/generated/prisma/enums';
@@ -21,10 +21,16 @@ import { AuthUser } from 'src/common/interface/auth-user.interface';
 import { UpdateBookingStatusDto } from './dto/update-bookingstatus.dto';
 import { UpdateBookingByAdminDto } from './dto/update-booking-by-admin.dto';
 import { TOP_ROOM_BOOKED } from 'src/common/constant/app.constant';
+import { MailerService } from '@nestjs-modules/mailer';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class DatphongService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mailerService: MailerService,
+    private readonly configService: ConfigService,
+  ) { }
 
   // TẠO BOOKING
   async create(createDatphongDto: CreateDatphongDto, currentUser: AuthUser) {
@@ -35,9 +41,9 @@ export class DatphongService {
     const checkOut = new Date(ngay_di);
 
     // 1. Kiểm tra ngày đi > ngày đến
-    if (checkOut <= checkIn) {
-      throw new BadRequestException('Ngày đi phải lớn hơn ngày đến');
-    }
+    // if (checkOut <= checkIn) {
+    //   throw new BadRequestException('Ngày đi phải lớn hơn ngày đến');
+    // } => Bỏ kiểm tra này vì đã có @IsAfter bên controller
 
     // 2. Check phòng có tồn tại không?
     const phong = await this.prisma.phong.findUnique({
@@ -99,26 +105,58 @@ export class DatphongService {
   }
 
   // UPDATE BOOKING STATUS
-  async updateStatus(
-    id: number,
-    updateBookingStatusDto: UpdateBookingStatusDto,
-  ) {
-    const { trang_thai } = updateBookingStatusDto;
-    // const bookingStatus = trang_thai.toLowerCase();
+  async updateStatus(id: number, dto: UpdateBookingStatusDto) {
+    /**
+     * Vd: lấy giá trị DATABASE_URL trong .env để log ra thông tin url
+     */
+    const db_url = this.configService.get<string>('DATABASE_URL');
+    console.log('DATABASE_URL is: ', db_url);
+
+    const { trang_thai } = dto;
 
     // Kiểm tra đơn đặt phòng có tồn tại không
-    const booking = await this.prisma.datphong.findUnique({ where: { id } });
-    if (!booking) throw new NotFoundException('Không tìm thấy đơn đặt phòng');
+    const booking = await this.prisma.datphong.findUnique({
+      where: { id },
+      include: { nguoidung: true, phong: true } // Lấy luôn thông tin để dùng cho mail
+    });
+    if (!booking) throw new NotFoundException('Không tìm thấy booking');
 
     const updatedBooking = await this.prisma.datphong.update({
       where: { id },
       data: { trang_thai },
+      include: { nguoidung: true, phong: true }
     });
+
+    // 3. Logic gửi mail khi trạng thái chuyển sang 'completed' (tương đương checked-out)
+    // So sánh với giá trị chuỗi vì Enum trong Prisma khi nhận vào DTO thường là string
+    if (trang_thai === datphong_trang_thai.completed && updatedBooking.nguoidung?.email) {
+      // Gọi hàm gửi mail nhưng KHÔNG dùng await để không bắt User đợi mail gửi xong mới nhận được kết quả API
+      this.sendThankYouEmail(updatedBooking);
+    }
 
     return {
       message: `Đã chuyển trạng thái sang: ${trang_thai}`,
       data: updatedBooking,
     };
+  }
+
+  private async sendThankYouEmail(booking: any) {
+    try {
+      await this.mailerService.sendMail({
+        to: booking.nguoidung.email,
+        subject: 'Cảm ơn bạn đã trải nghiệm dịch vụ tại Airbnb',
+        template: './thank-you', // tên file .hbs phải nằm trong src/modules-system/mail/templates/thank-you.hbs
+        context: {
+          name: booking.nguoidung.name,
+          roomName: booking.phong.ten_phong,
+          bookingId: booking.id,
+        },
+      });
+      console.log('Email sent successfully to:', booking.nguoidung.email);
+    } catch (error) {
+      // Quan trọng: Chỉ log lỗi, không throw để tránh làm hỏng transaction database
+      console.error('Gửi mail thất bại:', error);
+    }
   }
 
   // ADMIN UPDATE STATUS (Admin có thể sửa toàn bộ thông tin booking)

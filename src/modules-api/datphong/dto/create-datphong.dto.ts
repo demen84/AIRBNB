@@ -1,30 +1,34 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDateString, IsInt, IsNotEmpty, IsNumber, Max, Min } from 'class-validator';
+import { IsDate, IsInt, IsNotEmpty, Max, Min } from 'class-validator';
+import { IsAfter } from 'src/common/decorators/is-after.decorator';
 
 export class CreateDatphongDto {
-    @ApiProperty({ example: '1', description: 'Mã phòng' })
+    @ApiProperty({ example: 1, description: 'Mã phòng' })
     @IsNotEmpty()
     @IsInt()
-    // @IsNumber()
+    @Type(() => Number) // Đảm bảo luôn là số
     ma_phong: number;
 
-    @ApiProperty({ example: '2026-01-01', description: 'Ngày nhận phòng (Năm-Tháng-Ngày' })
+    @ApiProperty({ example: '2026-01-01', description: 'Ngày nhận phòng (YYYY-MM-DD)' })
     @IsNotEmpty()
-    @IsDateString()
-    ngay_den: string;
+    @Type(() => Date) // Chuyển chuỗi từ client gửi lên thành object Date
+    @IsDate({ message: 'Ngày đến không đúng định dạng ngày tháng' })
+    ngay_den: Date;
 
-    @ApiProperty({ example: '2026-01-03', description: 'Ngày trả phòng (Năm-Tháng-Ngày' })
+    @ApiProperty({ example: '2026-01-03', description: 'Ngày trả phòng (YYYY-MM-DD)' })
     @IsNotEmpty()
-    @IsDateString()
-    ngay_di: string;
+    @Type(() => Date) // Chuyển chuỗi từ client gửi lên thành object Date
+    @IsDate({ message: 'Ngày đi không đúng định dạng ngày tháng' })
+    @IsAfter('ngay_den', { message: 'Ngày đi phải sau Ngày đến' })
+    ngay_di: Date;
 
-    @ApiProperty({ example: '2', description: 'Số lượng khách' })
-    @IsNotEmpty()
-    @IsInt()
-    @Min(1)
-    @Max(10)
-    @Type(() => Number)
+    @ApiProperty({ example: 2, description: 'Số lượng khách' })
+    @IsNotEmpty({ message: 'Số lượng khách không được để trống' })
+    @IsInt({ message: 'Số lượng khách phải là số nguyên' }) // <== Tối ưu nhất ở đây
+    @Min(1, { message: 'Ít nhất phải có 1 khách' })
+    @Max(20, { message: 'Số lượng khách quá lớn' })
+    @Type(() => Number) // Ép kiểu từ string sang number để validator hoạt động đúng
     so_luong_khach: number;
 
     // ma_nguoi_dat → lấy từ JWT / user đăng nhập
