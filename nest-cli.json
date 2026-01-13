@@ -5,7 +5,9 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "assets": [
-      { "include": "modules-system/mail/templates/**/*", "watchAssets": true }
-    ]
+      { "include": "modules-system/mail/templates/**/*", "watchAssets": true },
+      {"include": ".env", "watchAssets": true}
+    ],
+    "watchAssets": true
   }
 }

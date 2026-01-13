@@ -28,7 +28,8 @@ import * as Joi from 'joi';
       validationSchema: Joi.object({
         MAIL_USER: Joi.string().email().required(),
         MAIL_PASS: Joi.string().required(),
-        MAIL_HOST: Joi.string().default('smtp.gmail.com')
+        MAIL_HOST: Joi.string().default('smtp.gmail.com'),
+        TOP_ROOM_BOOKED: Joi.number().default(5),
       }),
     }),
     AuthModule,

@@ -20,7 +20,7 @@ import { datphong_trang_thai } from 'src/modules-system/prisma/generated/prisma/
 import { AuthUser } from 'src/common/interface/auth-user.interface';
 import { UpdateBookingStatusDto } from './dto/update-bookingstatus.dto';
 import { UpdateBookingByAdminDto } from './dto/update-booking-by-admin.dto';
-import { TOP_ROOM_BOOKED } from 'src/common/constant/app.constant';
+// import { TOP_ROOM_BOOKED } from 'src/common/constant/app.constant';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 
@@ -107,7 +107,7 @@ export class DatphongService {
   // UPDATE BOOKING STATUS
   async updateStatus(id: number, dto: UpdateBookingStatusDto) {
     /**
-     * Vd: lấy giá trị DATABASE_URL trong .env để log ra thông tin url
+     * Vd: dùng configService lấy giá trị DATABASE_URL trong .env để log ra thông tin url
      */
     const db_url = this.configService.get<string>('DATABASE_URL');
     console.log('DATABASE_URL is: ', db_url);
@@ -490,6 +490,7 @@ export class DatphongService {
 
   // THỐNG KÊ TOP 5 PHÒNG ĐƯỢC ĐẶT NHIỀU NHẤT
   async getTopRooms() {
+    const topRoomBooked = this.configService.get<number>('TOP_ROOM_BOOKED', 5); // Cách này lấy trực tiếp từ .env, không thông qua file app.constant.ts
     // 1. Group by ma_phong để đếm số lượt đặt (booking count)
     const roomStats = await this.prisma.datphong.groupBy({
       where: {
@@ -503,7 +504,7 @@ export class DatphongService {
           id: 'desc', // Sắp xếp từ nhiều đến ít
         },
       },
-      take: TOP_ROOM_BOOKED, // Chỉ lấy Top 5
+      take: topRoomBooked, //TOP_ROOM_BOOKED, // Chỉ lấy Top 5
     });
 
     if (roomStats.length === 0) {
@@ -539,7 +540,7 @@ export class DatphongService {
       .filter((item) => item !== null); // Lọc bỏ các giá trị null
 
     return {
-      message: `Top ${TOP_ROOM_BOOKED} phòng được đặt nhiều nhất`,
+      message: `Top ${topRoomBooked} phòng được đặt nhiều nhất`,
       data: result,
     };
   }
