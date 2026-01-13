@@ -20,6 +20,8 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // --- KÍCH HOẠT PRISMA FILTER Ở TOÀN CỤC (GLOBAL) ---
+  // Để ko cần phải try {} catch {} ở 1 vài nơi => khi có lỗi thì filter này sẽ throw ra lỗi đúng với case đó.
+  // Vd: bỏ try {} catch ở hàm updateStatus() ở datphong.service.ts
   const { httpAdapter } = app.get(HttpAdapterHost);
   app.useGlobalFilters(new PrismaClientExceptionFilter(httpAdapter));
 
@@ -27,7 +29,7 @@ async function bootstrap() {
   const folders = [
     'uploads/vitri',
     'uploads/phong',
-    'uploads/avatar_nguoi_dung'
+    'uploads/avatar_nguoi_dung',
   ];
 
   // 2. Tự động kiểm tra và tạo folder nếu chưa có
