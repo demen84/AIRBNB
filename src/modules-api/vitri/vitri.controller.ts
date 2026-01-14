@@ -47,7 +47,7 @@ export class VitriController {
   @ApiBearerAuth() // Bật Lock symbol
   @Roles('admin') // Đánh dấu chỉ admin mới được vào
   // ! QUAN TRỌNG: ProtectGuard phải đứng TRƯỚC RolesGuard
-  @UseGuards(ProtectGuard, RolesGuard)
+  // @UseGuards(ProtectGuard, RolesGuard)
   @ApiOperation({ summary: 'Thêm vị trí (chỉ quyền admin)' })
   @ApiResponse({ status: 200, description: 'Thêm vị trí thành công' })
   async create(@Body() createVitriDto: CreateVitriDto) {
@@ -85,7 +85,7 @@ export class VitriController {
   @ApiBearerAuth() // Bật Lock symbol
   @Roles('admin') // Đánh dấu chỉ admin mới được vào
   // ! QUAN TRỌNG: ProtectGuard phải đứng TRƯỚC RolesGuard
-  @UseGuards(ProtectGuard, RolesGuard)
+  // @UseGuards(ProtectGuard, RolesGuard)
   @ApiOperation({ summary: 'Cập  thông tin vị trí (chỉ quyền admin)' })
   @ApiResponse({ status: 200, description: 'Cập nhật vị trí thành công' })
   @ApiParam({
@@ -118,7 +118,7 @@ export class VitriController {
   })
   @ApiBearerAuth()
   @Roles('admin')
-  @UseGuards(ProtectGuard, RolesGuard)
+  // @UseGuards(ProtectGuard, RolesGuard)
   @UseInterceptors(
     FileInterceptor('hinh_anh', {
       storage: diskStorage({
@@ -131,8 +131,10 @@ export class VitriController {
         },
       }),
       fileFilter: (req, file, callback) => {
-        if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-          return callback(new Error('Chỉ chấp nhận file ảnh!'), false);
+        if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+          return callback(
+            new BadRequestException('Định dạng file ảnh không hợp lệ.'),
+            false);
         }
         callback(null, true);
       },
@@ -161,7 +163,7 @@ export class VitriController {
   @ApiBearerAuth() // Bật Lock symbol
   @Roles('admin') // Đánh dấu chỉ admin mới được vào
   // ! QUAN TRỌNG: ProtectGuard phải đứng TRƯỚC RolesGuard
-  @UseGuards(ProtectGuard, RolesGuard)
+  // @UseGuards(ProtectGuard, RolesGuard)
   @ApiOperation({ summary: 'Xóa vị trí (chỉ quyền admin)' })
   @ApiResponse({ status: 200, description: 'Xóa vị trí thành công' })
   @ApiResponse({

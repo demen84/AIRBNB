@@ -29,8 +29,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Roles } from 'src/common/decorators/roles.decorator';
-import { ProtectGuard } from 'src/common/guard/protect/protect.guard';
-import { RolesGuard } from 'src/common/guard/protect/roles.guard';
+// import { ProtectGuard } from 'src/common/guard/protect/protect.guard';
+// import { RolesGuard } from 'src/common/guard/protect/roles.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -46,7 +46,7 @@ export class PhongController {
   @Post()
   @ApiBearerAuth() // Bật Lock symbol
   @Roles('admin') // Đánh dấu chỉ admin mới vào được
-  @UseGuards(ProtectGuard, RolesGuard)
+  // @UseGuards(ProtectGuard, RolesGuard)
   @ApiOperation({ summary: 'Tạo phòng mới (chỉ quyền Admin)' })
   @ApiResponse({ status: 200, description: 'Tạo phòng thành công' })
   async create(@Body() createPhongDto: CreatePhongDto) {
@@ -84,7 +84,7 @@ export class PhongController {
   @ApiBearerAuth() // Bật Lock symbol
   @Roles('admin') // Đánh dấu chỉ admin mới được vào
   // ! QUAN TRỌNG: ProtectGuard phải đứng TRƯỚC RolesGuard
-  @UseGuards(ProtectGuard, RolesGuard)
+  // @UseGuards(ProtectGuard, RolesGuard)
   @ApiOperation({ summary: 'Cập nhật thông tin phòng' })
   @ApiResponse({
     status: 200,
@@ -106,7 +106,7 @@ export class PhongController {
   @Delete(':id')
   @ApiBearerAuth() // Bật ổ khóa
   @Roles('admin') // Quy định chỉ admin mới có quyền
-  @UseGuards(ProtectGuard, RolesGuard)
+  // @UseGuards(ProtectGuard, RolesGuard)
   @ApiOperation({ summary: 'Xóa phòng (chỉ quyền admin)' })
   @ApiResponse({ status: 200, description: 'Xóa phòng thành công' })
   @ApiParam({
@@ -136,7 +136,7 @@ export class PhongController {
   })
   @ApiBearerAuth()
   @Roles('admin')
-  @UseGuards(ProtectGuard, RolesGuard)
+  // @UseGuards(ProtectGuard, RolesGuard) => đã đặt global nên không cần dòng này
   @UseInterceptors(
     FileInterceptor('hinh_anh', {
       storage: diskStorage({
@@ -145,12 +145,15 @@ export class PhongController {
           const uniqueSuffix =
             Date.now() + '-' + Math.round(Math.random() * 1e9);
           const ext = extname(file.originalname);
-          callback(null, `vitri-${uniqueSuffix}${ext}`);
+          callback(null, `phong-${uniqueSuffix}${ext}`);
         },
       }),
       fileFilter: (req, file, callback) => {
-        if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-          return callback(new Error('Chỉ chấp nhận file ảnh!'), false);
+        if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+          return callback(
+            new BadRequestException('Định dạng file hình không hợp lệ.'),
+            false
+          );
         }
         callback(null, true);
       },

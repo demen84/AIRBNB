@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { datphong_trang_thai } from 'src/modules-system/prisma/generated/prisma/enums';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 
 @Injectable()
 export class DashboardService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async getLiveMetrics() {
     const today = new Date();
@@ -77,9 +78,59 @@ export class DashboardService {
       _count: { id: true },
     });
 
-    return stats.map((item) => ({
-      status: item.trang_thai,
-      count: item._count.id,
+    return stats.map((dp) => ({
+      status: dp.trang_thai,
+      count: dp._count.id,
     }));
+  }
+
+  // BÁO CÁO TỔNG SỐ KHÁCH
+  async getGuestStatistics(month: number, year: number) {
+    // 1. Tạo khoảng thời gian bắt đầu và kết thúc của tháng đó
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59); // Ngày cuối cùng của tháng
+
+    // Lấy tất cả đơn đặt phòng đã hoàn tất trong khoảng thời gian này
+    const completedBookings = await this.prisma.datphong.findMany({
+      where: {
+        trang_thai: datphong_trang_thai.completed,
+        ngay_den: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      include: {
+        phong: {
+          select: { ten_phong: true }
+        }
+      }
+    });
+
+    // --- BÁO CÁO 1: Tổng số khách của từng phòng ---
+    const guestsByRoom = completedBookings.reduce((acc, booking) => {
+      const roomId = booking.ma_phong;
+      const roomName = booking.phong?.ten_phong || `Phòng ${roomId}`;
+      const guestCount = booking.so_luong_khach || 0;
+
+      if (!acc[roomId]) {
+        acc[roomId] = { ma_phong: roomId, ten_phong: roomName, tong_khach: 0 };
+      }
+      acc[roomId].tong_khach += guestCount;
+      return acc;
+    }, {});
+
+    // Chuyển object thành array để dễ hiển thị
+    const reportByRoom = Object.values(guestsByRoom);
+
+    // --- BÁO CÁO 2: Tổng số khách đến Airbnb (toàn hệ thống) ---
+    const totalGuestsSystem = completedBookings.reduce((sum, booking) => {
+      return sum + (booking.so_luong_khach || 0);
+    }, 0);
+
+    return {
+      thoi_gian: `${month}/${year}`,
+      tong_khach_toan_he_thong: totalGuestsSystem,
+      chi_tiet_tung_phong: reportByRoom,
+    };
   }
 }

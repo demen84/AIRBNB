@@ -30,8 +30,8 @@ import {
 import type { AuthUser } from 'src/common/interface/auth-user.interface';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { Roles } from 'src/common/decorators/roles.decorator';
-import { ProtectGuard } from 'src/common/guard/protect/protect.guard';
-import { RolesGuard } from 'src/common/guard/protect/roles.guard';
+// import { ProtectGuard } from 'src/common/guard/protect/protect.guard';
+// import { RolesGuard } from 'src/common/guard/protect/roles.guard';
 import { UpdateBookingStatusDto } from './dto/update-bookingstatus.dto';
 import { UpdateBookingByAdminDto } from './dto/update-booking-by-admin.dto';
 import { TOP_ROOM_BOOKED } from 'src/common/constant/app.constant';
@@ -58,7 +58,7 @@ export class DatphongController {
   @Patch('update-status/:id')
   @ApiBearerAuth()
   @Roles('admin') // Chỉ quyền admin
-  @UseGuards(ProtectGuard, RolesGuard)
+  // @UseGuards(ProtectGuard, RolesGuard)
   @ApiOperation({
     summary:
       'Cập nhật trạng thái đơn đặt phòng (Confirm, Check-in, Cancel ...)',
@@ -80,7 +80,7 @@ export class DatphongController {
   @Patch('admin-update/:id')
   @ApiBearerAuth()
   @Roles('admin') // Chỉ quyền admin
-  @UseGuards(ProtectGuard, RolesGuard)
+  // @UseGuards(ProtectGuard, RolesGuard)
   @ApiOperation({ summary: 'Admin chỉnh sửa toàn bộ thông tin đơn đặt phòng' })
   @ApiParam({
     name: 'id',

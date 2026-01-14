@@ -12,6 +12,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import * as fs from 'fs'; // Import thư viện File System (fs)
 import { PrismaClientExceptionFilter } from './common/filters/prisma-client-exception.filter';
+import { RolesGuard } from './common/guard/protect/roles.guard';
 
 async function bootstrap() {
   // const app = await NestFactory.create(AppModule);
@@ -52,7 +53,11 @@ async function bootstrap() {
 
   const reflector = app.get(Reflector);
 
+  /**
+   * Có 2 dòng sau thì không cần sử dụng @UseGuards(ProtectGuard, RolesGuard) tại các Controller nếu cần protect & phân quyền admin
+   */
   app.useGlobalGuards(new ProtectGuard(reflector));
+  app.useGlobalGuards(new RolesGuard(reflector));
   app.useGlobalGuards(new CheckPermissionGuard(reflector));
 
   app.useGlobalPipes(

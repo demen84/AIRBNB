@@ -112,32 +112,60 @@ export class DatphongService {
     const db_url = this.configService.get<string>('DATABASE_URL');
     console.log('DATABASE_URL is: ', db_url);
 
-    const { trang_thai } = dto;
+    const { trang_thai: nextStatus } = dto;
 
-    // Kiểm tra đơn đặt phòng có tồn tại không
+    // 1. Kiểm tra booking có tồn tại không
     const booking = await this.prisma.datphong.findUnique({
       where: { id },
       include: { nguoidung: true, phong: true } // Lấy luôn thông tin để dùng cho mail
     });
     if (!booking) throw new NotFoundException('Không tìm thấy booking');
 
+    const currentStatus = booking.trang_thai as datphong_trang_thai;
+
+    // 2. Kiểm tra trùng trạng thái
+    if (currentStatus === nextStatus) {
+      throw new BadRequestException(`Booking đã ở trạng thái ${nextStatus} rồi.`);
+    }
+
+    // 3. Kiểm tra tính hợp lệ của luồng (State Machine)
+    if (!this.isValidTransition(currentStatus, nextStatus)) {
+      throw new BadRequestException(
+        `Không thể chuyển từ trạng thái ${currentStatus} sang ${nextStatus}.`
+      );
+    }
+
+    // 4. Cập nhật booking status
     const updatedBooking = await this.prisma.datphong.update({
       where: { id },
-      data: { trang_thai },
+      data: { trang_thai: nextStatus },
       include: { nguoidung: true, phong: true }
     });
 
-    // 3. Logic gửi mail khi trạng thái chuyển sang 'completed' (tương đương checked-out)
+    // 5. Logic gửi mail khi trạng thái chuyển sang 'completed' (tương đương checked-out)
     // So sánh với giá trị chuỗi vì Enum trong Prisma khi nhận vào DTO thường là string
-    if (trang_thai === datphong_trang_thai.completed && updatedBooking.nguoidung?.email) {
-      // Gọi hàm gửi mail nhưng KHÔNG dùng await để không bắt User đợi mail gửi xong mới nhận được kết quả API
+    if (nextStatus === datphong_trang_thai.completed && updatedBooking.nguoidung?.email) {
+      // Gọi hàm gửi mail bất đồng bộ (KHÔNG dùng await) để không bắt User đợi mail gửi xong mới nhận được kết quả API
       this.sendThankYouEmail(updatedBooking);
     }
 
     return {
-      message: `Đã chuyển trạng thái sang: ${trang_thai}`,
+      message: `Đã chuyển trạng thái từ ${currentStatus} sang ${nextStatus} thành công`,
       data: updatedBooking,
     };
+  }
+
+  // HÀM KIỂM TRA CHUYỂN STATUS
+  private isValidTransition(current: datphong_trang_thai, next: datphong_trang_thai): boolean {
+    const transitions: Record<datphong_trang_thai, datphong_trang_thai[]> = {
+      [datphong_trang_thai.pending]: [datphong_trang_thai.confirmed, datphong_trang_thai.cancelled],
+      [datphong_trang_thai.confirmed]: [datphong_trang_thai.checked_in, datphong_trang_thai.cancelled],
+      [datphong_trang_thai.checked_in]: [datphong_trang_thai.completed, datphong_trang_thai.cancelled],
+      [datphong_trang_thai.completed]: [],
+      [datphong_trang_thai.cancelled]: [],
+    };
+
+    return transitions[current]?.includes(next) ?? false;
   }
 
   private async sendThankYouEmail(booking: any) {

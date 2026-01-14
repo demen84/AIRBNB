@@ -212,11 +212,11 @@ export class PhongService {
       const phong = await this.prisma.phong.findUnique({ where: { id } });
       if (!phong) throw new NotFoundException('Phòng này không tồn tại');
 
-      // 2. Nếu vị trí đã có ảnh cũ, thực hiện xóa file cũ đi
+      // 2. Nếu phòng đã có ảnh cũ, thực hiện xóa file cũ đi
       if (phong.hinh_anh) {
         const oldPath = join(process.cwd(), 'uploads/phong', phong.hinh_anh);
         if (fs.existsSync(oldPath)) {
-          fs.unlinkSync(oldPath); // Xóa file
+          fs.unlinkSync(oldPath); // Xóa file cũ
         }
       }
 
