@@ -33,9 +33,9 @@ export class DashboardController {
     return {
       thongBao: 'Lấy dữ liệu Dashboard thành công',
       data: {
-        metrics,
-        locationRevenue,
-        bookingStats,
+        metrics, // thống kê số liệu
+        locationRevenue, // Doanh thu theo vị trí
+        bookingStats, // Bảng thống kê booking
       },
     };
   }

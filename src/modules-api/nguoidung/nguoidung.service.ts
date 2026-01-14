@@ -1,4 +1,10 @@
-import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '../../modules-system/prisma/generated/prisma/client';
 import { UpdateNguoidungDto } from './dto/update-nguoidung.dto';
 import { PaginationQueryDto } from '../phong/dto/query.dto';
@@ -6,13 +12,15 @@ import { buildQuery } from 'src/common/helper/build-query.helper';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import { TokenService } from 'src/modules-system/token/token.service';
 import { nguoidung_status } from 'src/modules-system/prisma/generated/prisma/enums';
+import { join } from 'path';
+import * as fs from 'fs';
 
 @Injectable()
 export class NguoidungService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokenService: TokenService,
-  ) { }
+  ) {}
 
   async findAll(queryDto: PaginationQueryDto) {
     const { page, pageSize, filters, skip } = buildQuery(queryDto);
@@ -56,7 +64,11 @@ export class NguoidungService {
     };
   }
 
-  async update(id: number, updateNguoidungDto: UpdateNguoidungDto, currentUserId: Number) {
+  async update(
+    id: number,
+    updateNguoidungDto: UpdateNguoidungDto,
+    currentUserId: Number,
+  ) {
     try {
       // 1. Kiểm tra xem user có tồn tại không
       const userExists = await this.prisma.nguoidung.findUnique({
@@ -65,7 +77,7 @@ export class NguoidungService {
           id: true,
           status: true,
           role: true,
-        }
+        },
       });
 
       if (!userExists) {
@@ -74,12 +86,16 @@ export class NguoidungService {
 
       // 2. Chỉ cho phép tự update chính mình
       if (userExists.id != currentUserId) {
-        throw new ForbiddenException('Bạn chỉ có thể cập nhật thông tin của chính mình');
+        throw new ForbiddenException(
+          'Bạn chỉ có thể cập nhật thông tin của chính mình',
+        );
       }
 
       // 3. Nếu user bị banned thì không cho update profile (trừ trường hợp admin)
       if (userExists.status === nguoidung_status.banned) {
-        throw new ForbiddenException('Tài khoản đã bị khóa nên không thể cập nhật thông tin.');
+        throw new ForbiddenException(
+          'Tài khoản đã bị khóa nên không thể cập nhật thông tin.',
+        );
       }
 
       // 4. Explicit data update - chỉ cho phép các field an toàn
@@ -119,7 +135,9 @@ export class NguoidungService {
         // Validate định dạng YYYY-MM-DD
         // const regDate: string = "/^\d{4}-\d{2}-\d{2}$/";
         if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDayStr)) {
-          throw new BadRequestException('Ngày sinh phải có định dạng YYYY-MM-DD');
+          throw new BadRequestException(
+            'Ngày sinh phải có định dạng YYYY-MM-DD',
+          );
         }
 
         const birthDate = new Date(birthDayStr);
@@ -145,7 +163,9 @@ export class NguoidungService {
         }
 
         if (adjustedAge < 13) {
-          throw new BadRequestException('Bạn phải từ 13 tuổi trở lên để sử dụng dịch vụ');
+          throw new BadRequestException(
+            'Bạn phải từ 13 tuổi trở lên để sử dụng dịch vụ',
+          );
         }
 
         updateData.birth_day = birthDayStr;
@@ -162,7 +182,8 @@ export class NguoidungService {
       }
 
       // Nếu không có field nào để update
-      if (Object.keys(updateData).length === 1) { // chỉ có updated_at
+      if (Object.keys(updateData).length === 1) {
+        // chỉ có updated_at
         throw new BadRequestException('Không có thông tin nào để cập nhật');
       }
 
@@ -220,15 +241,19 @@ export class NguoidungService {
     try {
       // 0. Kiểm tra quyền admin mới cho xóa
       if (currentUser.role !== 'admin') {
-        throw new ForbiddenException('Bạn không có quyền thực hiện hành động này');
+        throw new ForbiddenException(
+          'Bạn không có quyền thực hiện hành động này',
+        );
       }
       // 1. Kiểm tra user không thể tự banned chính mình
       if (id === currentUser.id) {
-        throw new BadRequestException('Bạn không thể tự khóa tài khoản của chính mình');
+        throw new BadRequestException(
+          'Bạn không thể tự khóa tài khoản của chính mình',
+        );
       }
       // 2. Tìm user cần banned
       const userToBan = await this.prisma.nguoidung.findUnique({
-        where: { id }
+        where: { id },
       });
 
       // Kiểm tra user có tồn tại không?
@@ -238,12 +263,16 @@ export class NguoidungService {
 
       // 3. Admin không thể banned tài khoản khác cũng có role là 'admin'
       if (userToBan.role === 'admin') {
-        throw new BadRequestException('Không thể khóa tài khoản của một Admin khác');
+        throw new BadRequestException(
+          'Không thể khóa tài khoản của một Admin khác',
+        );
       }
 
       // 4. User đã bị banned rồi thì không banned nữa (để tránh ghi đè ngày banned_at mới)
       if (userToBan.status === nguoidung_status.banned) {
-        throw new BadRequestException('Người dùng này đã bị khóa từ trước đó rồi');
+        throw new BadRequestException(
+          'Người dùng này đã bị khóa từ trước đó rồi',
+        );
       }
 
       // 5. Cập nhật status = 'banned' or 'pending'
@@ -252,7 +281,7 @@ export class NguoidungService {
         data: {
           status: nguoidung_status.banned,
           banned_at: new Date(),
-          updated_at: new Date()
+          updated_at: new Date(),
         },
         select: {
           id: true,
@@ -260,25 +289,66 @@ export class NguoidungService {
           email: true,
           role: true,
           status: true,
-          updated_at: true
+          updated_at: true,
         },
       });
 
       return {
-        message: "Khóa người dùng thành công.",
-        data: bannedUser
+        message: 'Khóa người dùng thành công.',
+        data: bannedUser,
       };
-
     } catch (error) {
       // Quan trọng: Đẩy các lỗi có chủ đích ra ngoài để NestJS trả đúng mã code (403, 404)
       if (
         error instanceof NotFoundException ||
         error instanceof ForbiddenException ||
         error instanceof BadRequestException
-      ) { throw error; }
+      ) {
+        throw error;
+      }
 
       // Lỗi server
       throw new InternalServerErrorException('500 - Lỗi hệ thống');
     }
+  }
+
+  /**
+   * UPLOAD AVATAR
+   */
+  async uploadAvatar(id: number, filename: string) {
+    // 1. Kiểm tra vị trí có tồn tại không
+    const user = await this.prisma.nguoidung.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('Người dùng này không tồn tại');
+
+    // 2. Nếu phòng đã có ảnh cũ, thực hiện xóa file cũ đi
+    if (user.avatar) {
+      const oldPath = join(
+        process.cwd(),
+        'uploads/avatar_nguoi_dung',
+        user.avatar,
+      );
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath); // Xóa file cũ
+      }
+    }
+
+    // 3. Cập nhật tên file vào DB
+    const updatedUser = await this.prisma.nguoidung.update({
+      where: { id },
+      data: { avatar: filename },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatar: true,
+        updated_at: true,
+      },
+    });
+
+    // 4. Response cho Front End
+    return {
+      message: 'Upload avatar thành công',
+      data: updatedUser,
+    };
   }
 }

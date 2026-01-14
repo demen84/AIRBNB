@@ -4,7 +4,7 @@ import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 
 @Injectable()
 export class DashboardService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async getLiveMetrics() {
     const today = new Date();
@@ -20,7 +20,7 @@ export class DashboardService {
           },
           _sum: { tong_tien: true },
         }),
-        // 2. Số đơn mới
+        // 2. Số booking mới
         this.prisma.datphong.count({ where: { created_at: { gte: today } } }),
         // 3. Số phòng đang bận
         this.prisma.datphong.count({
@@ -31,9 +31,9 @@ export class DashboardService {
       ]);
 
     return {
-      revenueToday: Number(revenueToday._sum.tong_tien || 0),
-      newBookings,
-      occupancyRate:
+      revenueToday: Number(revenueToday._sum.tong_tien || 0), // doanh thu hôm nay
+      newBookings, // booking mới
+      occupancyRate: // Tỉ lệ lấp đầy phòng
         totalRooms > 0
           ? Number(((occupiedRooms / totalRooms) * 100).toFixed(1))
           : 0,
@@ -58,16 +58,19 @@ export class DashboardService {
     const result = stats
       .map((loc) => {
         const total = loc.phong.reduce((sum, p) => {
-          // p.datphong là một mảng các đơn đặt, d.tong_tien cần ép kiểu Number
+          // p.datphong là một mảng các booking, d.tong_tien cần ép kiểu Number
           const roomRevenue = p.datphong.reduce(
             (s, d) => s + Number(d.tong_tien || 0),
             0,
           );
           return sum + roomRevenue;
         }, 0);
-        return { location: loc.ten_vi_tri, revenue: total };
+        return {
+          vi_tri: loc.ten_vi_tri,
+          doanh_thu: total,
+        };
       })
-      .sort((a, b) => b.revenue - a.revenue);
+      .sort((a, b) => b.doanh_thu - a.doanh_thu);
 
     return result;
   }
@@ -101,9 +104,9 @@ export class DashboardService {
       },
       include: {
         phong: {
-          select: { ten_phong: true }
-        }
-      }
+          select: { ten_phong: true },
+        },
+      },
     });
 
     // --- BÁO CÁO 1: Tổng số khách của từng phòng ---

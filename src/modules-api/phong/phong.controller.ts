@@ -40,7 +40,7 @@ import { SearchRoomDto } from './dto/search-room.dto';
 @ApiTags('Quản Lý Phòng')
 @Controller('phong')
 export class PhongController {
-  constructor(private readonly phongService: PhongService) { }
+  constructor(private readonly phongService: PhongService) {}
 
   // Chỉ admin mới có quyền create_new/update/delete phòng
   @Post()
@@ -119,7 +119,7 @@ export class PhongController {
     return this.phongService.remove(+id);
   }
 
-  // UPLOAD HÌNH ẢNH VỊ TRÍ
+  // UPLOAD HÌNH ẢNH
   @Post('upload-hinh/:id')
   @ApiConsumes('multipart/form-data') // Bắt buộc để Swagger hiện nút upload
   @ApiBody({
@@ -152,7 +152,7 @@ export class PhongController {
         if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
           return callback(
             new BadRequestException('Định dạng file hình không hợp lệ.'),
-            false
+            false,
           );
         }
         callback(null, true);
@@ -181,14 +181,11 @@ export class PhongController {
   @Get()
   @PublicDecorator()
   @SkipPermission()
-  @ApiOperation(
-    { summary: 'Tìm kiếm phòng trống (có phân trang & tìm kiếm)' })
-  @ApiResponse(
-    {
-      status: 200,
-      description: 'Trả về danh sách phòng còn trống'
-    }
-  )
+  @ApiOperation({ summary: 'Tìm kiếm phòng trống (có phân trang & tìm kiếm)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Trả về danh sách phòng còn trống',
+  })
   findAvailableRooms(@Query() searchRoomDto: SearchRoomDto) {
     return this.phongService.findAvailableRooms(searchRoomDto);
   }

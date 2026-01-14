@@ -17,7 +17,7 @@ import { SearchRoomDto } from './dto/search-room.dto';
 
 @Injectable()
 export class PhongService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createPhongDto: CreatePhongDto) {
     try {
@@ -171,17 +171,17 @@ export class PhongService {
       message: `Cập nhật thông tin phòng #${id} thành công`,
       data: updatedData,
     };
-
   }
 
   async remove(id: number) {
     // 1. Kiểm tra phòng có tồn tại trong db & đếm SL phòng liên quan (phòng đã phát sinh bảng đặt phòng)
     const phongExists = await this.prisma.phong.findUnique({
       where: { id },
-      select: { // => nhẹ hơn include
+      select: {
+        // => nhẹ hơn include
         id: true,
         // Đếm số lượng bản ghi ở table datphong có ma_phong = id
-        _count: { select: { datphong: true } }
+        _count: { select: { datphong: true } },
       },
     });
     // 2. Nếu không tồn tại phòng
@@ -207,36 +207,35 @@ export class PhongService {
   }
 
   async uploadHinh(id: number, filename: string) {
-    try {
-      // 1. Kiểm tra vị trí có tồn tại không
-      const phong = await this.prisma.phong.findUnique({ where: { id } });
-      if (!phong) throw new NotFoundException('Phòng này không tồn tại');
+    // try {
+    // 1. Kiểm tra vị trí có tồn tại không
+    const phong = await this.prisma.phong.findUnique({ where: { id } });
+    if (!phong) throw new NotFoundException('Phòng này không tồn tại');
 
-      // 2. Nếu phòng đã có ảnh cũ, thực hiện xóa file cũ đi
-      if (phong.hinh_anh) {
-        const oldPath = join(process.cwd(), 'uploads/phong', phong.hinh_anh);
-        if (fs.existsSync(oldPath)) {
-          fs.unlinkSync(oldPath); // Xóa file cũ
-        }
+    // 2. Nếu phòng đã có ảnh cũ, thực hiện xóa file cũ đi
+    if (phong.hinh_anh) {
+      const oldPath = join(process.cwd(), 'uploads/phong', phong.hinh_anh);
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath); // Xóa file cũ
       }
-
-      // 3. Cập nhật tên file vào DB
-      const updatedPhong = await this.prisma.phong.update({
-        where: { id },
-        data: { hinh_anh: filename },
-      });
-
-      // 4. Response cho Front End
-      return {
-        message: 'Upload hình ảnh thành công',
-        data: updatedPhong,
-      };
-    } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Lỗi khi lưu ảnh vào database');
     }
-  }
 
+    // 3. Cập nhật tên file vào DB
+    const updatedPhong = await this.prisma.phong.update({
+      where: { id },
+      data: { hinh_anh: filename },
+    });
+
+    // 4. Response cho Front End
+    return {
+      message: 'Upload hình ảnh thành công',
+      data: updatedPhong,
+    };
+    // } catch (error) {
+    //   if (error instanceof NotFoundException) throw error;
+    //   throw new InternalServerErrorException('Lỗi khi lưu ảnh vào database');
+    // }
+  }
 
   // TÌM KIẾM PHÒNG CÒN TRỐNG
   async findAvailableRooms(searchRoomDto: SearchRoomDto) {
@@ -316,7 +315,9 @@ export class PhongService {
       };
     } catch (error) {
       console.error('Lỗi tìm kiếm phòng:', error);
-      throw new InternalServerErrorException('Không thể thực hiện tìm kiếm phòng');
+      throw new InternalServerErrorException(
+        'Không thể thực hiện tìm kiếm phòng',
+      );
     }
   }
 }
