@@ -236,7 +236,7 @@ export class NguoidungService {
     }
   }
 
-  // Chỉ có admin mới có quyền xóa người dùng
+  // !Chỉ có admin mới có quyền xóa người dùng
   // Chỉ là soft delete chứ không hard delete
   async banUser(id: number, currentUser: { id: number; role: string }) {
     try {

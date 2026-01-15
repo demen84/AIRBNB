@@ -23,7 +23,7 @@ import * as Joi from 'joi';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // Cho phép dùng ConfigService ở mọi nơi mà không cần import lại
+      isGlobal: true, // !Cho phép dùng ConfigService ở mọi nơi mà không cần import lại
       // envFilePath: '.env', // Chỉ định file chứa biến môi trường
       validationSchema: Joi.object({
         MAIL_USER: Joi.string().email().required(),

@@ -239,7 +239,7 @@ export class NguoidungController {
     }
   ))
   @ApiOperation({
-    summary: 'Upload avatar lưu lên cloudinary(chỉ được upload avatar của chính mình)',
+    summary: 'Upload avatar lưu lên cloudinary (chỉ được upload avatar của chính mình)',
   })
   async uploadAvatarToCloud(
     @Param('id', ParseIntPipe) id: number,
