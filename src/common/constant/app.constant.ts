@@ -28,6 +28,11 @@ export const TOP_ROOM_BOOKED = Number(process.env.TOP_ROOM_BOOKED);
 export const MAIL_USER = process.env.MAIL_USER;
 export const MAIL_PASS = process.env.MAIL_PASS;
 
+// CLOUD
+export const CLOUDINARY_NAME = process.env.CLOUDINARY_NAME;
+export const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY;
+export const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET;
+
 //TTL: Time To Live
 export const ACCESS_TOKEN_TTL: TimeSpanText = (process.env.ACCESS_TOKEN_TTL ?? "600m") as TimeSpanText;
 export const REFRESH_TOKEN_TTL: TimeSpanText = (process.env.REFRESH_TOKEN_TTL ?? "5d") as TimeSpanText;

@@ -34,11 +34,28 @@ import { extname, join } from 'path';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { AuthUser } from 'src/common/interface/auth-user.interface';
 import * as fs from 'fs';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import { v2 as cloudinary } from 'cloudinary';
+
+// Cấu hình storage cho Cloudinary
+const storageCloudinary = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'avatar_nguoi_dung',
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+    public_id: (req, file) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      return `avatar-${uniqueSuffix}`;
+    },
+  } as any,
+});
+
+// ------------CODE HERE---------------
 
 @ApiTags('Quản Lý Người Dùng')
 @Controller('nguoidung')
 export class NguoidungController {
-  constructor(private readonly nguoidungService: NguoidungService) {}
+  constructor(private readonly nguoidungService: NguoidungService) { }
 
   // Lấy danh sách users
   @SkipPermission()
@@ -118,7 +135,7 @@ export class NguoidungController {
   /**
    * UPLOAD HÌNH ẢNH
    */
-  @Post('upload-avatar/:id')
+  @Post('upload-avatar-to-localdisk/:id')
   @ApiConsumes('multipart/form-data') // Bắt buộc để Swagger hiện nút upload
   @ApiBody({
     schema: {
@@ -156,7 +173,7 @@ export class NguoidungController {
     }),
   )
   @ApiOperation({
-    summary: 'Upload hình ảnh avatar (chỉ được upload avatar của chính mình)',
+    summary: 'Upload avatar lưu tại local disk (chỉ được upload avatar của chính mình)',
   })
   @ApiParam({
     name: 'id',
@@ -164,7 +181,7 @@ export class NguoidungController {
     type: Number,
     example: 1,
   })
-  async uploadAvatar(
+  async uploadAvatarToLocalDisk(
     @Param('id', ParseIntPipe) id: number,
     @UploadedFile() file: Express.Multer.File,
     @CurrentUser() userLogin: AuthUser, // Lấy thông tin user từ token
@@ -189,6 +206,57 @@ export class NguoidungController {
       );
     }
     // const fileName = file.filename;
-    return this.nguoidungService.uploadAvatar(id, file.filename);
+    return this.nguoidungService.uploadAvatarToLocalDisk(id, file.filename);
+  }
+
+  // UPLOAD to CLOUDINADY
+  @Post('upload-avatar-to-cloudinary/:id')
+  @ApiConsumes('multipart/form-data') // Bắt buộc để Swagger hiện nút upload
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        avatar: {
+          // Tên này phải khớp với @UseInterceptors(FileInterceptor('avatar'))
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiBearerAuth()
+  @ApiParam({
+    name: 'id',
+    description: 'Mã người dùng (id)',
+    type: Number,
+    example: 1,
+  })
+  @UseInterceptors(FileInterceptor(
+    'avatar',
+    {
+      storage: storageCloudinary,
+      limits: { fileSize: 2 * 1024 * 1024 } // ! Giới hạn avatar chỉ 2MB
+    }
+  ))
+  @ApiOperation({
+    summary: 'Upload avatar lưu lên cloudinary(chỉ được upload avatar của chính mình)',
+  })
+  async uploadAvatarToCloud(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() userLogin: AuthUser,
+  ) {
+    if (!file) throw new BadRequestException('Vui lòng chọn avatar');
+
+    // Logic kiểm tra Ownership
+    if (userLogin.id !== id) {
+      // Nếu sai quyền, xóa ngay ảnh vừa upload lên Cloudinary để tránh rác
+      const publicId = file.filename; // multer-storage-cloudinary lưu public_id vào filename
+      await cloudinary.uploader.destroy(publicId);
+      throw new ForbiddenException('Bạn chỉ có quyền upload avatar của chính mình');
+    }
+
+    // file.path lúc này sẽ là URL của ảnh trên Cloudinary (vd: https://res.cloudinary.com/...)
+    return this.nguoidungService.uploadAvatarToCloud(id, file.path);
   }
 }

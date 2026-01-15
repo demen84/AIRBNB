@@ -4,10 +4,11 @@ import { NguoidungService } from './nguoidung.service';
 import { NguoidungController } from './nguoidung.controller';
 import { PrismaModule } from 'src/modules-system/prisma/prisma.module';
 import { TokenModule } from 'src/modules-system/token/token.module';
+import { CloudinaryProvider } from 'src/common/cloudinary/cloudinary.provider';
 
 @Module({
   imports: [PrismaModule, TokenModule],
   controllers: [NguoidungController],
-  providers: [NguoidungService],
+  providers: [NguoidungService, CloudinaryProvider],
 })
-export class NguoidungModule {}
+export class NguoidungModule { }

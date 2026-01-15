@@ -5,7 +5,6 @@
  * Checked_in - Completed (Khách trả phòng - Kết thúc)
  * Pending/Confirmed/Cancelled (Hủy đơn)
  */
-
 import {
   Controller,
   Get,
@@ -14,8 +13,8 @@ import {
   Patch,
   Param,
   Delete,
-  UseGuards,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { DatphongService } from './datphong.service';
 import { CreateDatphongDto } from './dto/create-datphong.dto';
@@ -35,6 +34,7 @@ import { Roles } from 'src/common/decorators/roles.decorator';
 import { UpdateBookingStatusDto } from './dto/update-bookingstatus.dto';
 import { UpdateBookingByAdminDto } from './dto/update-booking-by-admin.dto';
 import { TOP_ROOM_BOOKED } from 'src/common/constant/app.constant';
+import { datphong_trang_thai } from 'src/modules-system/prisma/generated/prisma/enums';
 
 @ApiTags('Đặt Phòng (Booking)')
 @Controller('datphong')
@@ -61,17 +61,20 @@ export class DatphongController {
   // @UseGuards(ProtectGuard, RolesGuard)
   @ApiOperation({
     summary:
-      'Cập nhật trạng thái đơn đặt phòng (Confirm, Check-in, Cancel ...)',
+      'Cập nhật trạng thái đơn đặt phòng (confirmed, checked-in, completed, cancelled, pending)',
   })
-  @ApiParam({
-    name: 'id',
-    description: 'Mã đặt phòng (Booking ID)',
-    type: Number,
-    example: 1,
-  })
+  @ApiParam(
+    {
+      name: 'id',
+      description: 'Mã đặt phòng (Booking ID)',
+      type: Number,
+      example: 1,
+    }
+  )
   updateStatus(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateBookingStatusDto: UpdateBookingStatusDto,
+    // @Body() updateBookingStatusDto: UpdateBookingStatusDto,
+    @Query() updateBookingStatusDto: UpdateBookingStatusDto
   ) {
     return this.datphongService.updateStatus(id, updateBookingStatusDto);
   }

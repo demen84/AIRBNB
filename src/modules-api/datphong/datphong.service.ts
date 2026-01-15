@@ -151,7 +151,7 @@ export class DatphongService {
 
     return {
       message: `Đã chuyển trạng thái từ ${currentStatus} sang ${nextStatus} thành công`,
-      data: updatedBooking,
+      // data: updatedBooking,
     };
   }
 
@@ -509,7 +509,7 @@ export class DatphongService {
     );
 
     return {
-      message: 'Thống kê doanh thu bằng Raw SQL',
+      message: 'Thống kê doanh thu (bằng Raw SQL)',
       nam: year,
       tong_doanh_thu_nam,
       chi_tiet_thang: fullYear,

@@ -14,13 +14,14 @@ import { TokenService } from 'src/modules-system/token/token.service';
 import { nguoidung_status } from 'src/modules-system/prisma/generated/prisma/enums';
 import { join } from 'path';
 import * as fs from 'fs';
+import { v2 as cloudinary } from 'cloudinary';
 
 @Injectable()
 export class NguoidungService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokenService: TokenService,
-  ) {}
+  ) { }
 
   async findAll(queryDto: PaginationQueryDto) {
     const { page, pageSize, filters, skip } = buildQuery(queryDto);
@@ -315,7 +316,7 @@ export class NguoidungService {
   /**
    * UPLOAD AVATAR
    */
-  async uploadAvatar(id: number, filename: string) {
+  async uploadAvatarToLocalDisk(id: number, filename: string) {
     // 1. Kiểm tra vị trí có tồn tại không
     const user = await this.prisma.nguoidung.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('Người dùng này không tồn tại');
@@ -350,5 +351,39 @@ export class NguoidungService {
       message: 'Upload avatar thành công',
       data: updatedUser,
     };
+  }
+
+  async uploadAvatarToCloud(id: number, imageUrl: string) {
+    // 1. Kiểm tra người dùng
+    const user = await this.prisma.nguoidung.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('Người dùng không tồn tại');
+
+    // 2. Xử lý xóa ảnh cũ nếu tồn tại
+    if (user.avatar) {
+      // TH1: Ảnh cũ trên Cloudinary
+      if (user.avatar.includes('res.cloudinary.com')) {
+        const parts = user.avatar.split('/');
+        const fileNameWithExt = parts[parts.length - 1]; // avatar-quy-123.jpg
+        const folderPart = parts[parts.length - 2]; // avatar_nguoi_dung
+        const publicId = fileNameWithExt.split('.')[0];
+
+        // Xóa trên Cloudinary (kèm folder)
+        await cloudinary.uploader.destroy(`${folderPart}/${publicId}`);
+      }
+      // TH2: Ảnh cũ ở Local Disk (dọn dẹp tàn dư cũ)
+      else {
+        const oldLocalPath = join(process.cwd(), 'uploads/avatar_nguoi_dung', user.avatar);
+        if (fs.existsSync(oldLocalPath)) {
+          fs.unlinkSync(oldLocalPath);
+        }
+      }
+    }
+
+    // 3. Cập nhật URL ảnh mới vào Database
+    return await this.prisma.nguoidung.update({
+      where: { id },
+      data: { avatar: imageUrl },
+      select: { id: true, name: true, avatar: true, email: true },
+    });
   }
 }
