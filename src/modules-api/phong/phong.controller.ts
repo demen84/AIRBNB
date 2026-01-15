@@ -8,7 +8,6 @@ import {
   Delete,
   Query,
   Req,
-  UseGuards,
   UseInterceptors,
   ParseIntPipe,
   UploadedFile,
@@ -151,7 +150,9 @@ export class PhongController {
       fileFilter: (req, file, callback) => {
         if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
           return callback(
-            new BadRequestException('Định dạng file hình không hợp lệ.'),
+            new BadRequestException(
+              'Định dạng file hình không hợp lệ. Chỉ chấp nhận .jpg jpeg png gif webp',
+            ),
             false,
           );
         }
@@ -159,7 +160,9 @@ export class PhongController {
       },
     }),
   )
-  @ApiOperation({ summary: 'Upload hình ảnh phòng (Chỉ quyền Admin)' })
+  @ApiOperation({
+    summary: 'Upload hình ảnh phòng (chỉ quyền admin - chỉ lưu localdisk)',
+  })
   @ApiParam({
     name: 'id',
     description: 'Mã phòng (id)',

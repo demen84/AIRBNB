@@ -39,7 +39,7 @@ import { datphong_trang_thai } from 'src/modules-system/prisma/generated/prisma/
 @ApiTags('Đặt Phòng (Booking)')
 @Controller('datphong')
 export class DatphongController {
-  constructor(private readonly datphongService: DatphongService) { }
+  constructor(private readonly datphongService: DatphongService) {}
 
   // TẠO BOOKING
   @Post()
@@ -63,18 +63,16 @@ export class DatphongController {
     summary:
       'Cập nhật trạng thái đơn đặt phòng (confirmed, checked-in, completed, cancelled, pending)',
   })
-  @ApiParam(
-    {
-      name: 'id',
-      description: 'Mã đặt phòng (Booking ID)',
-      type: Number,
-      example: 1,
-    }
-  )
+  @ApiParam({
+    name: 'id',
+    description: 'Mã đặt phòng (Booking ID)',
+    type: Number,
+    example: 1,
+  })
   updateStatus(
     @Param('id', ParseIntPipe) id: number,
     // @Body() updateBookingStatusDto: UpdateBookingStatusDto,
-    @Query() updateBookingStatusDto: UpdateBookingStatusDto
+    @Query() updateBookingStatusDto: UpdateBookingStatusDto,
   ) {
     return this.datphongService.updateStatus(id, updateBookingStatusDto);
   }
@@ -176,7 +174,10 @@ export class DatphongController {
   @Get('thong-ke-doanh-thu/:year')
   @ApiBearerAuth()
   @Roles('admin')
-  @ApiOperation({ summary: 'Thống kê doanh thu theo 12 tháng trong năm' })
+  @ApiOperation({
+    summary:
+      'Thống kê doanh thu theo 12 tháng trong năm (chỉ tính booking status = completed)',
+  })
   @ApiParam({
     name: 'year',
     description: 'Nhập năm cần thống kê',
@@ -193,7 +194,9 @@ export class DatphongController {
   @Get('top-phong')
   @ApiBearerAuth()
   @Roles('admin')
-  @ApiOperation({ summary: `Thống kê Top ${TOP_ROOM_BOOKED} phòng được đặt nhiều nhất` })
+  @ApiOperation({
+    summary: `Thống kê Top ${TOP_ROOM_BOOKED} phòng được đặt nhiều nhất (chỉ tính booking status = completed)`,
+  })
   getTopRooms() {
     return this.datphongService.getTopRooms();
   }

@@ -30,7 +30,7 @@ export class DatphongService {
     private readonly prisma: PrismaService,
     private readonly mailerService: MailerService,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   // TẠO BOOKING
   async create(createDatphongDto: CreateDatphongDto, currentUser: AuthUser) {
@@ -117,7 +117,7 @@ export class DatphongService {
     // 1. Kiểm tra booking có tồn tại không
     const booking = await this.prisma.datphong.findUnique({
       where: { id },
-      include: { nguoidung: true, phong: true } // Lấy luôn thông tin để dùng cho mail
+      include: { nguoidung: true, phong: true }, // Lấy luôn thông tin để dùng cho mail
     });
     if (!booking) throw new NotFoundException('Không tìm thấy booking');
 
@@ -125,13 +125,15 @@ export class DatphongService {
 
     // 2. Kiểm tra trùng trạng thái
     if (currentStatus === nextStatus) {
-      throw new BadRequestException(`Booking đã ở trạng thái ${nextStatus} rồi.`);
+      throw new BadRequestException(
+        `Booking đã ở trạng thái ${nextStatus} rồi.`,
+      );
     }
 
     // 3. Kiểm tra tính hợp lệ của luồng (State Machine)
     if (!this.isValidTransition(currentStatus, nextStatus)) {
       throw new BadRequestException(
-        `Không thể chuyển từ trạng thái ${currentStatus} sang ${nextStatus}.`
+        `Không thể chuyển từ trạng thái ${currentStatus} sang ${nextStatus}.`,
       );
     }
 
@@ -139,12 +141,15 @@ export class DatphongService {
     const updatedBooking = await this.prisma.datphong.update({
       where: { id },
       data: { trang_thai: nextStatus },
-      include: { nguoidung: true, phong: true }
+      include: { nguoidung: true, phong: true },
     });
 
     // 5. Logic gửi mail khi trạng thái chuyển sang 'completed' (tương đương checked-out)
     // So sánh với giá trị chuỗi vì Enum trong Prisma khi nhận vào DTO thường là string
-    if (nextStatus === datphong_trang_thai.completed && updatedBooking.nguoidung?.email) {
+    if (
+      nextStatus === datphong_trang_thai.completed &&
+      updatedBooking.nguoidung?.email
+    ) {
       // Gọi hàm gửi mail bất đồng bộ (KHÔNG dùng await) để không bắt User đợi mail gửi xong mới nhận được kết quả API
       this.sendThankYouEmail(updatedBooking);
     }
@@ -156,11 +161,23 @@ export class DatphongService {
   }
 
   // HÀM KIỂM TRA CHUYỂN STATUS
-  private isValidTransition(current: datphong_trang_thai, next: datphong_trang_thai): boolean {
+  private isValidTransition(
+    current: datphong_trang_thai,
+    next: datphong_trang_thai,
+  ): boolean {
     const transitions: Record<datphong_trang_thai, datphong_trang_thai[]> = {
-      [datphong_trang_thai.pending]: [datphong_trang_thai.confirmed, datphong_trang_thai.cancelled],
-      [datphong_trang_thai.confirmed]: [datphong_trang_thai.checked_in, datphong_trang_thai.cancelled],
-      [datphong_trang_thai.checked_in]: [datphong_trang_thai.completed, datphong_trang_thai.cancelled],
+      [datphong_trang_thai.pending]: [
+        datphong_trang_thai.confirmed,
+        datphong_trang_thai.cancelled,
+      ],
+      [datphong_trang_thai.confirmed]: [
+        datphong_trang_thai.checked_in,
+        datphong_trang_thai.cancelled,
+      ],
+      [datphong_trang_thai.checked_in]: [
+        datphong_trang_thai.completed,
+        datphong_trang_thai.cancelled,
+      ],
       [datphong_trang_thai.completed]: [],
       [datphong_trang_thai.cancelled]: [],
     };
@@ -266,6 +283,7 @@ export class DatphongService {
     await this.prisma.datphong.update({
       where: { id },
       data: { trang_thai: datphong_trang_thai.cancelled },
+      // include: { nguoidung: true, phong: true },
     });
 
     return { message: 'Hủy phòng thành công' };
@@ -367,7 +385,16 @@ export class DatphongService {
         trang_thai: datphong_trang_thai.completed,
         updated_at: new Date(),
       },
+      include: { nguoidung: true, phong: true },
     });
+
+    if (
+      updatedBooking.trang_thai === datphong_trang_thai.completed &&
+      updatedBooking.nguoidung?.email
+    ) {
+      // Gọi hàm gửi mail bất đồng bộ (KHÔNG dùng await) để không bắt User đợi mail gửi xong mới nhận được kết quả API
+      this.sendThankYouEmail(updatedBooking);
+    }
 
     return {
       message: 'Khách hàng đã trả phòng. Giao dịch hoàn tất!',

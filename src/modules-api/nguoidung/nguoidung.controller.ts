@@ -135,79 +135,79 @@ export class NguoidungController {
   /**
    * UPLOAD HÌNH ẢNH
    */
-  @Post('upload-avatar-to-localdisk/:id')
-  @ApiConsumes('multipart/form-data') // Bắt buộc để Swagger hiện nút upload
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        avatar: {
-          // Tên này phải khớp với @UseInterceptors(FileInterceptor('avatar'))
-          type: 'string',
-          format: 'binary',
-        },
-      },
-    },
-  })
-  @ApiBearerAuth()
-  @UseInterceptors(
-    FileInterceptor('avatar', {
-      storage: diskStorage({
-        destination: './uploads/avatar_nguoi_dung', // Thư mục lưu ảnh
-        filename: (req, file, callback) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname);
-          callback(null, `avatar-${uniqueSuffix}${ext}`);
-        },
-      }),
-      fileFilter: (req, file, callback) => {
-        if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
-          return callback(
-            new BadRequestException('Định dạng file hình không hợp lệ.'),
-            false,
-          );
-        }
-        callback(null, true);
-      },
-    }),
-  )
-  @ApiOperation({
-    summary: 'Upload avatar lưu tại local disk (chỉ được upload avatar của chính mình)',
-  })
-  @ApiParam({
-    name: 'id',
-    description: 'Mã người dùng (id)',
-    type: Number,
-    example: 1,
-  })
-  async uploadAvatarToLocalDisk(
-    @Param('id', ParseIntPipe) id: number,
-    @UploadedFile() file: Express.Multer.File,
-    @CurrentUser() userLogin: AuthUser, // Lấy thông tin user từ token
-  ) {
-    if (!file) {
-      throw new BadRequestException('Vui lòng chọn avatar để upload');
-    }
+  // @Post('upload-avatar-to-localdisk/:id')
+  // @ApiConsumes('multipart/form-data') // Bắt buộc để Swagger hiện nút upload
+  // @ApiBody({
+  //   schema: {
+  //     type: 'object',
+  //     properties: {
+  //       avatar: {
+  //         // Tên này phải khớp với @UseInterceptors(FileInterceptor('avatar'))
+  //         type: 'string',
+  //         format: 'binary',
+  //       },
+  //     },
+  //   },
+  // })
+  // @ApiBearerAuth()
+  // @UseInterceptors(
+  //   FileInterceptor('avatar', {
+  //     storage: diskStorage({
+  //       destination: './uploads/avatar_nguoi_dung', // Thư mục lưu ảnh
+  //       filename: (req, file, callback) => {
+  //         const uniqueSuffix =
+  //           Date.now() + '-' + Math.round(Math.random() * 1e9);
+  //         const ext = extname(file.originalname);
+  //         callback(null, `avatar-${uniqueSuffix}${ext}`);
+  //       },
+  //     }),
+  //     fileFilter: (req, file, callback) => {
+  //       if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+  //         return callback(
+  //           new BadRequestException('Định dạng file hình không hợp lệ.'),
+  //           false,
+  //         );
+  //       }
+  //       callback(null, true);
+  //     },
+  //   }),
+  // )
+  // @ApiOperation({
+  //   summary: 'Upload avatar lưu tại local disk (chỉ được upload avatar của chính mình)',
+  // })
+  // @ApiParam({
+  //   name: 'id',
+  //   description: 'Mã người dùng (id)',
+  //   type: Number,
+  //   example: 1,
+  // })
+  // async uploadAvatarToLocalDisk(
+  //   @Param('id', ParseIntPipe) id: number,
+  //   @UploadedFile() file: Express.Multer.File,
+  //   @CurrentUser() userLogin: AuthUser, // Lấy thông tin user từ token
+  // ) {
+  //   if (!file) {
+  //     throw new BadRequestException('Vui lòng chọn avatar để upload');
+  //   }
 
-    // 1. Kiểm tra quyền sở hữu (Chỉ chính chủ mới được upload)
-    if (userLogin.id !== id) {
-      // Xóa file rác Multer đã lỡ lưu vào folder uploads
-      const filePath = join(
-        process.cwd(),
-        'uploads/avatar_nguoi_dung',
-        file.filename,
-      );
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-      throw new ForbiddenException(
-        'Bạn chỉ có quyền upload avatar của chính mình.',
-      );
-    }
-    // const fileName = file.filename;
-    return this.nguoidungService.uploadAvatarToLocalDisk(id, file.filename);
-  }
+  //   // 1. Kiểm tra quyền sở hữu (Chỉ chính chủ mới được upload)
+  //   if (userLogin.id !== id) {
+  //     // Xóa file rác Multer đã lỡ lưu vào folder uploads
+  //     const filePath = join(
+  //       process.cwd(),
+  //       'uploads/avatar_nguoi_dung',
+  //       file.filename,
+  //     );
+  //     if (fs.existsSync(filePath)) {
+  //       fs.unlinkSync(filePath);
+  //     }
+  //     throw new ForbiddenException(
+  //       'Bạn chỉ có quyền upload avatar của chính mình.',
+  //     );
+  //   }
+  //   // const fileName = file.filename;
+  //   return this.nguoidungService.uploadAvatarToLocalDisk(id, file.filename);
+  // }
 
   // UPLOAD to CLOUDINADY
   @Post('upload-avatar-to-cloudinary/:id')

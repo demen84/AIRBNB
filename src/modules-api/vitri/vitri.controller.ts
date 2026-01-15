@@ -7,15 +7,13 @@ import {
   Param,
   Delete,
   Query,
-  Req,
-  UseGuards,
   UseInterceptors,
   ParseIntPipe,
   UploadedFile,
   BadRequestException,
 } from '@nestjs/common';
 import { VitriService } from './vitri.service';
-import type { Request } from 'express';
+// import type { Request } from 'express';
 import { CreateVitriDto } from './dto/create-vitri.dto';
 import { UpdateVitriDto } from './dto/update-vitri.dto';
 import {
@@ -29,8 +27,6 @@ import { PublicDecorator } from 'src/common/decorators/public.decorator';
 import { PaginationQueryDto } from '../phong/dto/query.dto';
 import { SkipPermission } from 'src/common/decorators/check-permission.decorator';
 import { Roles } from 'src/common/decorators/roles.decorator';
-import { RolesGuard } from 'src/common/guard/protect/roles.guard';
-import { ProtectGuard } from 'src/common/guard/protect/protect.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -140,7 +136,7 @@ export class VitriController {
       },
     }),
   )
-  @ApiOperation({ summary: 'Upload hình ảnh cho vị trí (chỉ admin)' })
+  @ApiOperation({ summary: 'Upload hình ảnh cho vị trí (chỉ quyền admin - chỉ lưu localdisk)' })
   @ApiParam({
     name: 'id',
     description: 'Mã vị trí',
