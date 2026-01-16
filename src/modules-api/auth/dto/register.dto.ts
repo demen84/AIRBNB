@@ -10,7 +10,7 @@ export class RegisterDto {
   email: string;
 
   @ApiProperty({
-    example: 'Tamg@123', description:
+    example: 'Tam@123', description:
       'Mật khẩu ít nhất 8 ký tự, phải có ít nhất 1 chữ hoa, 1 chữ thường, 1 ký số và 1 ký tự đặc biệt'
   })
   @IsNotEmpty({ message: 'Mật khẩu không được để trống' })
