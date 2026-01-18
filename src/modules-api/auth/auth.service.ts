@@ -1,4 +1,8 @@
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { PrismaService } from 'src/modules-system/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
@@ -10,7 +14,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokenService: TokenService,
-  ) { }
+  ) {}
 
   async register(registerDto: RegisterDto) {
     const { name, email, pass_word } = registerDto;
@@ -46,8 +50,8 @@ export class AuthService {
         email: true,
         role: true,
         status: true,
-        created_at: true
-      }
+        created_at: true,
+      },
     });
 
     // // 5. Tạo access token luôn (đăng ký xong tự login)
@@ -60,7 +64,7 @@ export class AuthService {
     // 6. Trả kết quả Response
     return {
       message: 'Đăng ký thành công',
-      data: newUser
+      data: newUser,
       // data: {
       //   user: newUser,
       //   access_token: accessToken,
@@ -82,7 +86,9 @@ export class AuthService {
     }
 
     if (userExist.status === 'banned' || userExist.status === 'pending') {
-      throw new ForbiddenException('Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Admin.');
+      throw new ForbiddenException(
+        'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Admin.',
+      );
     }
 
     if (!pass_word || pass_word.length === 0) {
@@ -110,6 +116,47 @@ export class AuthService {
     // sendMail("quyit84@gmail.com", "Test gửi mail từ NodeJS");
 
     return tokens;
+  }
+
+  async googleLogin(googleUser: any) {
+    if (!googleUser) {
+      throw new BadRequestException('Không có thông tin từ Google');
+    }
+
+    // 1. Kiểm tra xem email này đã tồn tại trong DB chưa
+    let user = await this.prisma.nguoidung.findFirst({
+      where: { email: googleUser.email },
+    });
+
+    // 2. Nếu chưa có, tiến hành đăng ký mới
+    if (!user) {
+      user = await this.prisma.nguoidung.create({
+        data: {
+          email: googleUser.email,
+          name:
+            `${googleUser.lastName || ''} ${googleUser.firstName || ''}`.trim() ||
+            'Google User',
+          avatar: googleUser.picture,
+          // Password có thể để trống hoặc random chuỗi dài vì login qua Google
+          pass_word: '',
+          role: 'user',
+          // Thêm các trường cần thiết khác theo schema của bạn
+        },
+      });
+    }
+
+    // 3. Tạo JWT token giống như login bình thường để trả về cho Frontend
+    const payload = { id: user.id, email: user.email, role: user.role };
+    // const token = this.jwtService.sign(payload);
+    const token = this.tokenService.createToken(payload.id);
+
+    const { pass_word, ...userWithoutPass } = user;
+
+    return {
+      message: 'Đăng nhập Google thành công',
+      user: userWithoutPass,
+      token,
+    };
   }
 
   getInfo(req: any) {

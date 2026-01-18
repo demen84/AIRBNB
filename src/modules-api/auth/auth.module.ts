@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { PrismaModule } from 'src/modules-system/prisma/prisma.module';
 import { TokenModule } from 'src/modules-system/token/token.module';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { GoogleStrategy } from 'src/modules-system/auth/strategies/google.strategy';
 
 @Module({
   imports: [
@@ -20,6 +21,6 @@ import { ThrottlerModule } from '@nestjs/throttler';
   ],
   controllers: [AuthController],
   // providers: chỉ chứa các class được đánh dấu là @Injectable()
-  providers: [AuthService],
+  providers: [AuthService, GoogleStrategy],
 })
 export class AuthModule {}

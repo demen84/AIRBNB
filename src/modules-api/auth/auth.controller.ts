@@ -13,11 +13,12 @@ import {
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { UseGuards } from '@nestjs/common';
 import { RegisterThrottlerGuard } from 'src/common/guard/throttler/register-throttler.guard';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   // ! Các validation chỉ check ở Controller, không check ở Service
 
@@ -56,5 +57,22 @@ export class AuthController {
   })
   getInfo(@Req() req: any) {
     return this.authService.getInfo(req);
+  }
+
+  // GOOGLE LOGIN
+  @Get('google')
+  @PublicDecorator()
+  @UseGuards(AuthGuard('google'))
+  async googleAuth(@Req() req: any) {
+    // Route này sẽ tự động điều hướng sang trang login của Google
+  }
+
+  @Get('google/callback')
+  @PublicDecorator()
+  @UseGuards(AuthGuard('google'))
+  async googleAuthRedirect(@Req() req: any) {
+    // Sau khi login xong, Google gửi data về đây.
+    // Dữ liệu user nằm trong req.user (được return từ hàm validate ở trên)
+    return this.authService.googleLogin(req.user);
   }
 }
