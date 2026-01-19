@@ -58,7 +58,7 @@ model nguoidung {
   updated_at     DateTime?         @default(now()) @db.DateTime(0)
   status         nguoidung_status? @default(active)
   banned_at      DateTime?         @db.DateTime(0)
-  two_fa_secret  Bytes?            @db.VarBinary(64)
+  two_fa_secret  String?           @db.VarChar(255)
   is_2fa_enabled Boolean           @default(false)
   binhluan       binhluan[]
   datphong       datphong[]

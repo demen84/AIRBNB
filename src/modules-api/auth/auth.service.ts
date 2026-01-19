@@ -8,16 +8,15 @@ import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { TokenService } from 'src/modules-system/token/token.service';
-import { generateSecret, verify } from 'otplib';
-const { authenticator } = require('otplib');
 import * as qrcode from 'qrcode';
+import { generateSecret, generate, verify, generateURI } from 'otplib';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokenService: TokenService,
-  ) { }
+  ) {}
 
   async register(registerDto: RegisterDto) {
     const { name, email, pass_word } = registerDto;
@@ -119,14 +118,13 @@ export class AuthService {
     //   type_of_2fa: typeof userExist.is_2fa_enabled
     // });
 
-
     // --- Kiểm tra 2FA ---
     if (userExist.is_2fa_enabled) {
       return {
         message: 'Yêu cầu mã xác thực 2FA',
         require_2fa: true,
-        userId: userExist.id // Trả về id để FE biết cần verify cho ai.
-      }
+        userId: userExist.id, // Trả về id để FE biết cần verify cho ai.
+      };
     }
 
     // Nếu không bật 2FA thì mới trả về Token như bình thường
@@ -191,62 +189,85 @@ export class AuthService {
 
   // 1. Tạo Secret và QR Code cho User
   async generate2FA(userId: number) {
-    //1. Kiểm tra user có tồn tại?
+    // 1. Kiểm tra user tồn tại
     const user = await this.prisma.nguoidung.findUnique({
-      where: { id: userId }
+      where: { id: userId },
     });
     if (!user) {
       throw new BadRequestException(`Người dùng ${userId} không tồn tại`);
     }
 
-    // 2. Tạo secret key (dạng string Base32)
-    const secret = generateSecret();
+    // 2. Ngăn chặn nếu đã bật 2FA rồi (không cho generate lại)
+    if (user.is_2fa_enabled) {
+      throw new BadRequestException(
+        'Bảo mật 2 lớp đã được kích hoạt. Không cần tạo QR mới.',
+      );
+    }
 
-    // 3. Xây dựng chuỗi OTP Auth URL theo chuẩn:
-    // Định dạng: otpauth://totp/[Tên_App]:[Email]?secret=[Mã_Secret]&issuer=[Tên_App]
-    const appName = 'MyAirbnb';
-    const otpAuthUrl = `otpauth://totp/${appName}:${user.email}?secret=${secret}&issuer=${appName}`;
+    // ────────────────────────────────────────────────
+    // Logic chọn secret (tái sử dụng nếu đã có)
+    let secret: string;
 
-    // 4. Lưu secret vào DB dưới dạng Buffer (Bytes)
-    await this.prisma.nguoidung.update({
-      where: { id: userId },
-      data: {
-        two_fa_secret: Buffer.from(secret, 'utf-8')
-      },
+    if (user.two_fa_secret && !user.is_2fa_enabled) {
+      // Đã có secret tạm (từ lần generate trước), dùng lại thay vì tạo mới
+      secret = user.two_fa_secret as string;
+      console.log('DEBUG: Tái sử dụng secret cũ đã lưu trong DB');
+    } else {
+      // Chưa có secret → tạo mới và lưu vào DB
+      secret = generateSecret();
+      await this.prisma.nguoidung.update({
+        where: { id: userId },
+        data: { two_fa_secret: secret },
+      });
+      console.log('DEBUG: Tạo secret mới và lưu vào DB');
+    }
+    // ────────────────────────────────────────────────
+
+    // 3. Tạo URI và QR code
+    const otpAuthUri = generateURI({
+      secret,
+      label: user.email,
+      issuer: 'Airbnb_System',
     });
 
-    // 5. Chuyển URL thành hình ảnh mã QR
-    const qrCodeImage = await qrcode.toDataURL(otpAuthUrl);
+    const qrCodeImage = await qrcode.toDataURL(otpAuthUri);
 
     return {
       qrCodeImage,
-      secret
+      // secret, vì bảo mật nên không show thông tin này.
     };
   }
 
   async turnOn2FA(userId: number, code: string) {
     const user = await this.prisma.nguoidung.findUnique({
-      where: { id: userId }
+      where: { id: userId },
     });
 
     if (!user || !user.two_fa_secret) {
       throw new BadRequestException('Vui lòng tạo mã QR trước khi xác nhận');
     }
 
-    // 1. Chuyển Buffer (Bytes) từ DB ngược lại thành chuỗi string
-    const secret = Buffer.from(user.two_fa_secret).toString('utf-8');
+    const secret = user.two_fa_secret as string;
 
-    // 2. Xác thực mã 6 số (code) người dùng gửi lên
-    const isValid = verify({
-      token: code,
-      secret: secret
-    });
+    const result = await verify({ token: code, secret });
+    const isValid = result.valid;
+
+    console.log('Result', result);
+    console.log(
+      '--- TEST 2FA --- Mã nhập:',
+      code,
+      ' | Hợp lệ:',
+      isValid,
+      ' | Full result:',
+      result,
+    );
 
     if (!isValid) {
-      throw new BadRequestException('Mã xác nhận không chính xác hoặc đã hết hạn');
+      throw new BadRequestException(
+        'Mã xác nhận không chính xác hoặc đã hết hạn. Không thể bật 2FA',
+      );
     }
 
-    // 3. Nếu đúng, chính thức bật cờ 2FA và lưu vào DB
     await this.prisma.nguoidung.update({
       where: { id: userId },
       data: { is_2fa_enabled: true },
@@ -260,39 +281,25 @@ export class AuthService {
   // Verify Login 2FA
   async verifyLogin2FA(userId: number, code: string) {
     const user = await this.prisma.nguoidung.findUnique({
-      where: { id: userId }
+      where: { id: userId },
     });
 
     if (!user || !user.two_fa_secret) {
-      throw new BadRequestException('Yêu cầu không hợp lệ hoặc người dùng chưa bật 2FA');
+      throw new BadRequestException(
+        'Yêu cầu không hợp lệ hoặc người dùng chưa bật 2FA',
+      );
     }
 
-    const secret = Buffer.from(user.two_fa_secret).toString('utf-8');
+    const secret = user.two_fa_secret as string;
 
-    // LOG KIỂM TRA
-    console.log('--- DEBUG VERIFY ---');
-    console.log('User ID:', userId);
-    console.log('Code gửi lên:', code);
-    console.log('Secret lấy từ DB:', secret);
-
-    // Xác thực mã OTP
-    const isValid = verify({
-      token: code,
-      secret: secret
-    });
-
-    console.log('Kết quả Verify:', isValid);
+    // Verify (async)
+    const isValid = await verify({ token: code, secret });
 
     if (!isValid) {
-      throw new BadRequestException('Mã OTP không đúng');
+      throw new BadRequestException('Mã OTP không đúng hoặc hết hạn');
     }
 
-    // Nếu mã đúng -> Chính thức cấp Token truy cập
+    // Cấp token truy cập
     return this.tokenService.createToken(user.id);
-  }
-
-  getInfo(req: any) {
-    delete req.user.pass_word;
-    return req.user;
   }
 }

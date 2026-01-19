@@ -71,6 +71,10 @@ ALTER TABLE `nguoidung`
     ),
   ADD INDEX `idx_is_2fa_enabled` (`is_2fa_enabled`);
 
+ALTER TABLE nguoidung
+  MODIFY COLUMN two_fa_secret VARCHAR(255) NULL
+  COMMENT 'TOTP secret (Base32 encoded string)';
+
 -- Table DatPhong
 CREATE TABLE DatPhong (
     id INT AUTO_INCREMENT PRIMARY KEY,
