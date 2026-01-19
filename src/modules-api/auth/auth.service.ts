@@ -8,13 +8,16 @@ import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { TokenService } from 'src/modules-system/token/token.service';
+import { generateSecret, verify } from 'otplib';
+const { authenticator } = require('otplib');
+import * as qrcode from 'qrcode';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokenService: TokenService,
-  ) {}
+  ) { }
 
   async register(registerDto: RegisterDto) {
     const { name, email, pass_word } = registerDto;
@@ -109,6 +112,24 @@ export class AuthService {
       throw new BadRequestException(`Mật khẩu không đúng`);
     }
 
+    // LOG thông tin
+    // console.log('Kiểm tra user từ DB:', {
+    //   email: userExist.email,
+    //   is_2fa_enabled: userExist.is_2fa_enabled,
+    //   type_of_2fa: typeof userExist.is_2fa_enabled
+    // });
+
+
+    // --- Kiểm tra 2FA ---
+    if (userExist.is_2fa_enabled) {
+      return {
+        message: 'Yêu cầu mã xác thực 2FA',
+        require_2fa: true,
+        userId: userExist.id // Trả về id để FE biết cần verify cho ai.
+      }
+    }
+
+    // Nếu không bật 2FA thì mới trả về Token như bình thường
     // Tạo ra 1 Token
     const tokens = this.tokenService.createToken(userExist.id);
 
@@ -145,6 +166,15 @@ export class AuthService {
       });
     }
 
+    // --- Kiểm tra 2FA ---
+    if (user.is_2fa_enabled) {
+      return {
+        message: 'Yêu cầu mã xác thực 2FA',
+        require_2fa: true,
+        userId: user.id,
+      };
+    }
+
     // 3. Tạo JWT token giống như login bình thường để trả về cho Frontend
     const payload = { id: user.id, email: user.email, role: user.role };
     // const token = this.jwtService.sign(payload);
@@ -157,6 +187,108 @@ export class AuthService {
       user: userWithoutPass,
       token,
     };
+  }
+
+  // 1. Tạo Secret và QR Code cho User
+  async generate2FA(userId: number) {
+    //1. Kiểm tra user có tồn tại?
+    const user = await this.prisma.nguoidung.findUnique({
+      where: { id: userId }
+    });
+    if (!user) {
+      throw new BadRequestException(`Người dùng ${userId} không tồn tại`);
+    }
+
+    // 2. Tạo secret key (dạng string Base32)
+    const secret = generateSecret();
+
+    // 3. Xây dựng chuỗi OTP Auth URL theo chuẩn:
+    // Định dạng: otpauth://totp/[Tên_App]:[Email]?secret=[Mã_Secret]&issuer=[Tên_App]
+    const appName = 'MyAirbnb';
+    const otpAuthUrl = `otpauth://totp/${appName}:${user.email}?secret=${secret}&issuer=${appName}`;
+
+    // 4. Lưu secret vào DB dưới dạng Buffer (Bytes)
+    await this.prisma.nguoidung.update({
+      where: { id: userId },
+      data: {
+        two_fa_secret: Buffer.from(secret, 'utf-8')
+      },
+    });
+
+    // 5. Chuyển URL thành hình ảnh mã QR
+    const qrCodeImage = await qrcode.toDataURL(otpAuthUrl);
+
+    return {
+      qrCodeImage,
+      secret
+    };
+  }
+
+  async turnOn2FA(userId: number, code: string) {
+    const user = await this.prisma.nguoidung.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user || !user.two_fa_secret) {
+      throw new BadRequestException('Vui lòng tạo mã QR trước khi xác nhận');
+    }
+
+    // 1. Chuyển Buffer (Bytes) từ DB ngược lại thành chuỗi string
+    const secret = Buffer.from(user.two_fa_secret).toString('utf-8');
+
+    // 2. Xác thực mã 6 số (code) người dùng gửi lên
+    const isValid = verify({
+      token: code,
+      secret: secret
+    });
+
+    if (!isValid) {
+      throw new BadRequestException('Mã xác nhận không chính xác hoặc đã hết hạn');
+    }
+
+    // 3. Nếu đúng, chính thức bật cờ 2FA và lưu vào DB
+    await this.prisma.nguoidung.update({
+      where: { id: userId },
+      data: { is_2fa_enabled: true },
+    });
+
+    return {
+      message: 'Kích hoạt bảo mật 2 lớp (2FA) thành công',
+    };
+  }
+
+  // Verify Login 2FA
+  async verifyLogin2FA(userId: number, code: string) {
+    const user = await this.prisma.nguoidung.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user || !user.two_fa_secret) {
+      throw new BadRequestException('Yêu cầu không hợp lệ hoặc người dùng chưa bật 2FA');
+    }
+
+    const secret = Buffer.from(user.two_fa_secret).toString('utf-8');
+
+    // LOG KIỂM TRA
+    console.log('--- DEBUG VERIFY ---');
+    console.log('User ID:', userId);
+    console.log('Code gửi lên:', code);
+    console.log('Secret lấy từ DB:', secret);
+
+    // Xác thực mã OTP
+    const isValid = verify({
+      token: code,
+      secret: secret
+    });
+
+    console.log('Kết quả Verify:', isValid);
+
+    if (!isValid) {
+      throw new BadRequestException('Mã OTP không đúng');
+    }
+
+    // Nếu mã đúng -> Chính thức cấp Token truy cập
+    return this.tokenService.createToken(user.id);
   }
 
   getInfo(req: any) {

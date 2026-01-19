@@ -14,11 +14,13 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 import { UseGuards } from '@nestjs/common';
 import { RegisterThrottlerGuard } from 'src/common/guard/throttler/register-throttler.guard';
 import { AuthGuard } from '@nestjs/passport';
+import { Login2FADto, Verify2FADto } from './dto/2fa.dto';
+
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   // ! Các validation chỉ check ở Controller, không check ở Service
 
@@ -62,6 +64,7 @@ export class AuthController {
   // GOOGLE LOGIN
   @Get('google')
   @PublicDecorator()
+  @ApiOperation({ summary: 'Đăng nhập bằng tài khoản Google', description: 'Mở link này trên trình duyệt: http://localhost:3839/api/auth/google' })
   @UseGuards(AuthGuard('google'))
   async googleAuth(@Req() req: any) {
     // Route này sẽ tự động điều hướng sang trang login của Google
@@ -69,10 +72,37 @@ export class AuthController {
 
   @Get('google/callback')
   @PublicDecorator()
+  @ApiOperation({ summary: 'Google sẽ redirect về .../api/auth/google/callback?code=xxx&state=yyy' })
   @UseGuards(AuthGuard('google'))
   async googleAuthRedirect(@Req() req: any) {
     // Sau khi login xong, Google gửi data về đây.
     // Dữ liệu user nằm trong req.user (được return từ hàm validate ở trên)
     return this.authService.googleLogin(req.user);
+  }
+
+  // GENERATE 2FA QR CODE
+  @Post('2fa/generate')
+  @ApiBearerAuth() // Bật Lock symbol
+  @ApiOperation({ summary: 'Bước 1: Tạo mã QR để thiết lập 2FA' })
+  async generate2FA(@Req() req: any) {
+    // req.user.id lấy từ Access Token của người đang đăng nhập
+    return this.authService.generate2FA(req.user.id);
+  }
+
+  // TURN ON 2FA
+  @Post('2fa/turn-on')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bước 2: Xác nhận mã OTP để bật 2FA chính thức' })
+  async turnOn2FA(@Req() req: any, @Body() verify2FADto: Verify2FADto) {
+    // req.user.id lấy từ Token hiện tại
+    return this.authService.turnOn2FA(req.user.id, verify2FADto.code);
+  }
+
+  // VERIFY LOGIN 2FA
+  @PublicDecorator()
+  @Post('2fa/verify-login')
+  @ApiOperation({ summary: 'Bước cuối: Nhập mã OTP sau khi login để lấy Token chính thức' })
+  async verifyLogin2FA(@Body() login2FADto: Login2FADto) {
+    return this.authService.verifyLogin2FA(login2FADto.userId, login2FADto.code);
   }
 }

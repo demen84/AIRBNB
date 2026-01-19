@@ -57,6 +57,20 @@ ALTER TABLE nguoidung
 ADD COLUMN status ENUM('active', 'banned', 'pending') DEFAULT 'active',
 ADD COLUMN banned_at DATETIME DEFAULT NULL;
 
+ALTER TABLE `nguoidung`
+  ADD COLUMN `two_fa_secret` VARBINARY(64) NULL
+    COMMENT 'TOTP secret (nhị phân, vd: decode từ Base32)',
+  ADD COLUMN `is_2fa_enabled` TINYINT(1) NOT NULL DEFAULT 0
+    COMMENT 'Cờ bật/tắt 2FA (0=off,1=on)',
+  ADD CONSTRAINT `chk_2fa_secret_required`
+    CHECK (
+      `is_2fa_enabled` IN (0,1)
+      AND (
+        `is_2fa_enabled` = 0 OR `two_fa_secret` IS NOT NULL
+      )
+    ),
+  ADD INDEX `idx_is_2fa_enabled` (`is_2fa_enabled`);
+
 -- Table DatPhong
 CREATE TABLE DatPhong (
     id INT AUTO_INCREMENT PRIMARY KEY,
