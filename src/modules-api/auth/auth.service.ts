@@ -16,7 +16,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokenService: TokenService,
-  ) {}
+  ) { }
 
   async register(registerDto: RegisterDto) {
     const { name, email, pass_word } = registerDto;
@@ -292,14 +292,28 @@ export class AuthService {
 
     const secret = user.two_fa_secret as string;
 
-    // Verify (async)
-    const isValid = await verify({ token: code, secret });
+    // Sửa ở đây: Lấy .valid từ object kết quả
+    const result = await verify({ token: code, secret }); // trả vể kiểu VerifyResult
+    const isValid = result.valid;  // trả về kiểu boolean để kiểm tra
+
+    // Log để debug (xóa sau khi test xong)
+    console.log('DEBUG verifyLogin2FA:', {
+      inputCode: code,
+      secret: secret.substring(0, 10) + '...', // ẩn bớt để log an toàn
+      isValid,
+      fullResult: result,  // xem delta, epoch nếu cần
+    });
 
     if (!isValid) {
       throw new BadRequestException('Mã OTP không đúng hoặc hết hạn');
     }
 
-    // Cấp token truy cập
+    // Cấp token truy cập chỉ khi isValid === true
     return this.tokenService.createToken(user.id);
+  }
+
+  getInfo(req: any) {
+    delete req.user.pass_word;
+    return req.user;
   }
 }
