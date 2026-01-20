@@ -10,13 +10,14 @@ import { RegisterDto } from './dto/register.dto';
 import { TokenService } from 'src/modules-system/token/token.service';
 import * as qrcode from 'qrcode';
 import { generateSecret, generate, verify, generateURI } from 'otplib';
+import { AuthUser } from 'src/common/interface/auth-user.interface';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokenService: TokenService,
-  ) { }
+  ) {}
 
   async register(registerDto: RegisterDto) {
     const { name, email, pass_word } = registerDto;
@@ -294,7 +295,7 @@ export class AuthService {
 
     // Sửa ở đây: Lấy .valid từ object kết quả
     const result = await verify({ token: code, secret }); // trả vể kiểu object (VerifyResult)
-    const isValid = result.valid;  // trả về kiểu boolean để kiểm tra
+    const isValid = result.valid; // trả về kiểu boolean để kiểm tra
 
     // // Log để debug (xóa sau khi test xong)
     // console.log('DEBUG verifyLogin2FA:', {
@@ -312,8 +313,8 @@ export class AuthService {
     return this.tokenService.createToken(user.id);
   }
 
-  getInfo(req: any) {
-    delete req.user.pass_word;
-    return req.user;
+  getInfo(currentUser: AuthUser) {
+    // delete req.user.pass_word;
+    return { currentUser };
   }
 }
