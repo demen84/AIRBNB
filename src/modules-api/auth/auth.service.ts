@@ -252,15 +252,15 @@ export class AuthService {
     const result = await verify({ token: code, secret });
     const isValid = result.valid;
 
-    console.log('Result', result);
-    console.log(
-      '--- TEST 2FA --- Mã nhập:',
-      code,
-      ' | Hợp lệ:',
-      isValid,
-      ' | Full result:',
-      result,
-    );
+    // console.log('Result', result);
+    // console.log(
+    //   '--- TEST 2FA --- Mã nhập:',
+    //   code,
+    //   ' | Hợp lệ:',
+    //   isValid,
+    //   ' | Full result:',
+    //   result,
+    // );
 
     if (!isValid) {
       throw new BadRequestException(
@@ -293,16 +293,16 @@ export class AuthService {
     const secret = user.two_fa_secret as string;
 
     // Sửa ở đây: Lấy .valid từ object kết quả
-    const result = await verify({ token: code, secret }); // trả vể kiểu VerifyResult
+    const result = await verify({ token: code, secret }); // trả vể kiểu object (VerifyResult)
     const isValid = result.valid;  // trả về kiểu boolean để kiểm tra
 
-    // Log để debug (xóa sau khi test xong)
-    console.log('DEBUG verifyLogin2FA:', {
-      inputCode: code,
-      secret: secret.substring(0, 10) + '...', // ẩn bớt để log an toàn
-      isValid,
-      fullResult: result,  // xem delta, epoch nếu cần
-    });
+    // // Log để debug (xóa sau khi test xong)
+    // console.log('DEBUG verifyLogin2FA:', {
+    //   inputCode: code,
+    //   secret: secret.substring(0, 10) + '...', // ẩn bớt để log an toàn
+    //   isValid,
+    //   fullResult: result,  // xem delta, epoch nếu cần
+    // });
 
     if (!isValid) {
       throw new BadRequestException('Mã OTP không đúng hoặc hết hạn');
