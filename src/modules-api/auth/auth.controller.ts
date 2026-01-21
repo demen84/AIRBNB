@@ -59,7 +59,7 @@ export class AuthController {
     description: 'Trả về thông tin người dùng đã đăng nhập',
   })
   getInfo(@CurrentUser() currentUser: AuthUser) {
-    return this.authService.getInfo(currentUser);
+    return this.authService.getInfo(currentUser.id);
   }
 
   // GOOGLE LOGIN

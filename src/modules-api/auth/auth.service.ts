@@ -17,7 +17,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokenService: TokenService,
-  ) {}
+  ) { }
 
   async register(registerDto: RegisterDto) {
     const { name, email, pass_word } = registerDto;
@@ -313,8 +313,19 @@ export class AuthService {
     return this.tokenService.createToken(user.id);
   }
 
-  getInfo(currentUser: AuthUser) {
-    // delete req.user.pass_word;
-    return { currentUser };
+  async getInfo(userId: number) {
+    return await this.prisma.nguoidung.findMany({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        gender: true,
+        role: true,
+        avatar: true,
+        updated_at: true
+      }
+    });
   }
 }
