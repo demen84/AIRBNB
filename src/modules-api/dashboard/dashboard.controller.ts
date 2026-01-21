@@ -21,9 +21,9 @@ import {
 @ApiTags('Dashboard báo cáo thống kê')
 @Controller('dashboard')
 export class DashboardController {
-  constructor(private readonly dashboardService: DashboardService) {}
+  constructor(private readonly dashboardService: DashboardService) { }
 
-  @Get('dashboard')
+  @Get('doanh-thu')
   @ApiOperation({
     summary: 'Báo cáo doanh thu (chỉ tính booking status = completed)',
   })
