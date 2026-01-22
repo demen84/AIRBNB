@@ -57,7 +57,7 @@ const storageCloudinary = new CloudinaryStorage({
 @ApiTags('Quản Lý Người Dùng')
 @Controller('nguoidung')
 export class NguoidungController {
-  constructor(private readonly nguoidungService: NguoidungService) { }
+  constructor(private readonly nguoidungService: NguoidungService) {}
 
   // Lấy danh sách users
   @SkipPermission()
@@ -71,9 +71,12 @@ export class NguoidungController {
 
   // Update thông tin user
   // ! Người dùng chỉ có thể update thông tin của chính mình
-  @Patch(':id')
+  @Patch('/')
   @ApiBearerAuth() // Bật Lock symbol
-  @ApiOperation({ summary: 'Cập nhật thông tin người dùng' })
+  @ApiOperation({
+    summary:
+      'Cập nhật thông tin người dùng (chỉ được cập nhật thông tin của chính mình)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Cập nhật thông tin người dùng thành công',
@@ -83,29 +86,30 @@ export class NguoidungController {
     description: 'Không có quyền cập nhật người dùng này',
   })
   @ApiResponse({ status: 404, description: 'Người dùng không tồn tại' })
-  @ApiParam({
-    name: 'id',
-    description: 'Mã người dùng',
-    type: Number,
-    example: 1,
-  })
+  // @ApiParam({
+  //   name: 'id',
+  //   description: 'Mã người dùng',
+  //   type: Number,
+  //   example: 1,
+  // })
   update(
-    @Param('id') id: string,
+    // @Param('id') id: string,
     @Body() updateNguoidungDto: UpdateNguoidungDto,
-    @Req() req: Request, // Lấy thông tin user từ token
+    // @Req() req: Request, // Lấy thông tin user từ token
+    @CurrentUser() currentUser: AuthUser,
   ) {
-    const currentUser = req.user as any; // xem lại sau
+    // const currentUser = req.user as any; // xem lại sau
     if (!currentUser) {
       throw new ForbiddenException('Không tìm thấy thông tin người dùng');
     }
 
-    const targetId = +id;
-    const userIdFromToken = currentUser.id;
+    // const targetId = +id;
+    // const userIdFromToken = currentUser.id;
 
     return this.nguoidungService.update(
-      targetId,
+      // targetId,
       updateNguoidungDto,
-      userIdFromToken,
+      currentUser.id,
     );
   }
 
@@ -212,7 +216,7 @@ export class NguoidungController {
   // }
 
   // UPLOAD to CLOUDINADY
-  @Post('upload-avatar-to-cloudinary/:id')
+  @Post('upload-avatar-to-cloudinary')
   @ApiConsumes('multipart/form-data') // Bắt buộc để Swagger hiện nút upload
   @ApiBody({
     schema: {
@@ -227,27 +231,27 @@ export class NguoidungController {
     },
   })
   @ApiBearerAuth()
-  @UseGuards(OwnerUserGuard) // 🔥 chạy trước FileInterceptor() để khi ko đúng user thì throw message ra ngay
-  @ApiParam({
-    name: 'id',
-    description: 'Mã người dùng (id)',
-    type: Number,
-    example: 1,
-  })
-  @UseInterceptors(FileInterceptor(
-    'avatar',
-    {
+  // @UseGuards(OwnerUserGuard) // 🔥 chạy trước FileInterceptor() để khi ko đúng user thì throw message ra ngay
+  // @ApiParam({
+  //   name: 'id',
+  //   description: 'Mã người dùng (id)',
+  //   type: Number,
+  //   example: 1,
+  // })
+  @UseInterceptors(
+    FileInterceptor('avatar', {
       storage: storageCloudinary,
-      limits: { fileSize: 2 * 1024 * 1024 } // ! Giới hạn avatar chỉ 2MB
-    }
-  ))
+      limits: { fileSize: 2 * 1024 * 1024 }, // ! Giới hạn avatar chỉ 2MB
+    }),
+  )
   @ApiOperation({
-    summary: 'Upload avatar lưu lên cloudinary (chỉ được upload avatar của chính mình)',
+    summary:
+      'Upload avatar lưu lên cloudinary (chỉ được upload avatar của chính mình)',
   })
   async uploadAvatarToCloud(
-    @Param('id', ParseIntPipe) id: number,
+    // @Param('id', ParseIntPipe) id: number,
     @UploadedFile() file: Express.Multer.File,
-    // @CurrentUser() userLogin: AuthUser,
+    @CurrentUser() userLogin: AuthUser,
   ) {
     if (!file) throw new BadRequestException('Vui lòng chọn avatar');
 
@@ -260,6 +264,6 @@ export class NguoidungController {
     // }
 
     // file.path lúc này sẽ là URL của ảnh trên Cloudinary (vd: https://res.cloudinary.com/...)
-    return this.nguoidungService.uploadAvatarToCloud(id, file.path);
+    return this.nguoidungService.uploadAvatarToCloud(userLogin.id, file.path);
   }
 }

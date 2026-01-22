@@ -21,7 +21,7 @@ export class NguoidungService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokenService: TokenService,
-  ) { }
+  ) {}
 
   async findAll(queryDto: PaginationQueryDto) {
     const { page, pageSize, filters, skip } = buildQuery(queryDto);
@@ -66,14 +66,14 @@ export class NguoidungService {
   }
 
   async update(
-    id: number,
+    // id: number,
     updateNguoidungDto: UpdateNguoidungDto,
-    currentUserId: Number,
+    currentUserId: number,
   ) {
     try {
       // 1. Kiểm tra xem user có tồn tại không
       const userExists = await this.prisma.nguoidung.findUnique({
-        where: { id },
+        where: { id: currentUserId },
         select: {
           id: true,
           status: true,
@@ -85,12 +85,12 @@ export class NguoidungService {
         throw new NotFoundException('Người dùng không tồn tại');
       }
 
-      // 2. Chỉ cho phép tự update chính mình
-      if (userExists.id != currentUserId) {
-        throw new ForbiddenException(
-          'Bạn chỉ có thể cập nhật thông tin của chính mình',
-        );
-      }
+      // // 2. Chỉ cho phép tự update chính mình
+      // if (userExists.id != currentUserId) {
+      //   throw new ForbiddenException(
+      //     'Bạn chỉ có thể cập nhật thông tin của chính mình',
+      //   );
+      // }
 
       // 3. Nếu user bị banned thì không cho update profile (trừ trường hợp admin)
       if (userExists.status === nguoidung_status.banned) {
@@ -190,7 +190,7 @@ export class NguoidungService {
 
       // Cập nhật (chỉ các trường được gửi lên)
       const updatedUser = await this.prisma.nguoidung.update({
-        where: { id },
+        where: { id: currentUserId },
         data: updateData,
         // data: {
         //   ...updateNguoidungDto,
@@ -353,26 +353,33 @@ export class NguoidungService {
     };
   }
 
-  async uploadAvatarToCloud(id: number, imageUrl: string) {
-    // 1. Kiểm tra người dùng
-    const user = await this.prisma.nguoidung.findUnique({ where: { id } });
-    if (!user) throw new NotFoundException('Người dùng không tồn tại');
+  async uploadAvatarToCloud(userId: number, imageUrl: string) {
+    // 1. Lấy thông tin người dùng hiện tại đã login (currentUser)
+    const user = await this.prisma.nguoidung.findUnique({
+      where: { id: userId },
+      select: { avatar: true }, // Chỉ select avatar để tối ưu
+    });
+    // if (!user) throw new NotFoundException('Người dùng không tồn tại'); => ko cần kiểm tra vì khi đến đây là thực sự đã tồn tại user
 
     // 2. Xử lý xóa ảnh cũ nếu tồn tại
-    if (user.avatar) {
+    if (user?.avatar) {
       // TH1: Ảnh cũ trên Cloudinary
       if (user.avatar.includes('res.cloudinary.com')) {
         const parts = user.avatar.split('/');
         const fileNameWithExt = parts[parts.length - 1]; // avatar-quy-123.jpg
         const folderPart = parts[parts.length - 2]; // avatar_nguoi_dung
-        const publicId = fileNameWithExt.split('.')[0];
+        const publicId = fileNameWithExt.split('.')[0]; // avatar-quy-123
 
         // Xóa trên Cloudinary (kèm folder)
         await cloudinary.uploader.destroy(`${folderPart}/${publicId}`);
       }
       // TH2: Ảnh cũ ở Local Disk (dọn dẹp tàn dư cũ)
       else {
-        const oldLocalPath = join(process.cwd(), 'uploads/avatar_nguoi_dung', user.avatar);
+        const oldLocalPath = join(
+          process.cwd(),
+          'uploads/avatar_nguoi_dung',
+          user.avatar,
+        );
         if (fs.existsSync(oldLocalPath)) {
           fs.unlinkSync(oldLocalPath);
         }
@@ -381,7 +388,7 @@ export class NguoidungService {
 
     // 3. Cập nhật URL ảnh mới vào Database
     return await this.prisma.nguoidung.update({
-      where: { id },
+      where: { id: userId },
       data: { avatar: imageUrl },
       select: { id: true, name: true, avatar: true, email: true },
     });
