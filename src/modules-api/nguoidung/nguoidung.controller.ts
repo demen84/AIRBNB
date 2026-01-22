@@ -13,6 +13,7 @@ import {
   BadRequestException,
   ParseIntPipe,
   UploadedFile,
+  UseGuards,
 } from '@nestjs/common';
 import { NguoidungService } from './nguoidung.service';
 import type { Request } from 'express';
@@ -36,6 +37,7 @@ import type { AuthUser } from 'src/common/interface/auth-user.interface';
 import * as fs from 'fs';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import { v2 as cloudinary } from 'cloudinary';
+import { OwnerUserGuard } from 'src/common/guard/protect/owner-user.guard';
 
 // Cấu hình storage cho Cloudinary
 const storageCloudinary = new CloudinaryStorage({
@@ -225,6 +227,7 @@ export class NguoidungController {
     },
   })
   @ApiBearerAuth()
+  @UseGuards(OwnerUserGuard) // 🔥 chạy trước FileInterceptor() để khi ko đúng user thì throw message ra ngay
   @ApiParam({
     name: 'id',
     description: 'Mã người dùng (id)',
@@ -244,17 +247,17 @@ export class NguoidungController {
   async uploadAvatarToCloud(
     @Param('id', ParseIntPipe) id: number,
     @UploadedFile() file: Express.Multer.File,
-    @CurrentUser() userLogin: AuthUser,
+    // @CurrentUser() userLogin: AuthUser,
   ) {
     if (!file) throw new BadRequestException('Vui lòng chọn avatar');
 
-    // Logic kiểm tra Ownership
-    if (userLogin.id !== id) {
-      // Nếu sai quyền, xóa ngay ảnh vừa upload lên Cloudinary để tránh rác
-      const publicId = file.filename; // multer-storage-cloudinary lưu public_id vào filename
-      await cloudinary.uploader.destroy(publicId);
-      throw new ForbiddenException('Bạn chỉ có quyền upload avatar của chính mình');
-    }
+    // // Logic kiểm tra Ownership
+    // if (userLogin.id !== id) {
+    //   // Nếu sai quyền, xóa ngay ảnh vừa upload lên Cloudinary để tránh rác
+    //   const publicId = file.filename; // multer-storage-cloudinary lưu public_id vào filename
+    //   await cloudinary.uploader.destroy(publicId);
+    //   throw new ForbiddenException('Bạn chỉ có quyền upload avatar của chính mình');
+    // }
 
     // file.path lúc này sẽ là URL của ảnh trên Cloudinary (vd: https://res.cloudinary.com/...)
     return this.nguoidungService.uploadAvatarToCloud(id, file.path);
