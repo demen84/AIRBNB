@@ -37,7 +37,6 @@ import type { AuthUser } from 'src/common/interface/auth-user.interface';
 import * as fs from 'fs';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import { v2 as cloudinary } from 'cloudinary';
-import { OwnerUserGuard } from 'src/common/guard/protect/owner-user.guard';
 
 // Cấu hình storage cho Cloudinary
 const storageCloudinary = new CloudinaryStorage({
@@ -57,7 +56,7 @@ const storageCloudinary = new CloudinaryStorage({
 @ApiTags('Quản Lý Người Dùng')
 @Controller('nguoidung')
 export class NguoidungController {
-  constructor(private readonly nguoidungService: NguoidungService) {}
+  constructor(private readonly nguoidungService: NguoidungService) { }
 
   // Lấy danh sách users
   @SkipPermission()
@@ -231,6 +230,7 @@ export class NguoidungController {
     },
   })
   @ApiBearerAuth()
+  // @Owner('id')
   // @UseGuards(OwnerUserGuard) // 🔥 chạy trước FileInterceptor() để khi ko đúng user thì throw message ra ngay
   // @ApiParam({
   //   name: 'id',
